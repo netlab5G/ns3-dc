@@ -73,6 +73,7 @@ LtePdcp::LtePdcp ()
   NS_LOG_FUNCTION (this);
   m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<LtePdcp> (this);
   m_rlcSapUser = new LtePdcpSpecificLteRlcSapUser (this);
+  isEnbPdcp = 0; // woody3C
 }
 
 LtePdcp::~LtePdcp ()
@@ -263,5 +264,10 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
   m_pdcpSapUser->ReceivePdcpSdu (params);
 }
 
+void
+LtePdcp::IsEnbPdcp () // woody3C
+{
+  isEnbPdcp = 1;
+}
 
 } // namespace ns3
