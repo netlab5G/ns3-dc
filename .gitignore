@@ -1,14 +1,6 @@
-.lock-waf*
 .waf*
 build/
 *.pyc
-doc/html
-.DS_Store
-animation.xml
-.R*
-*.app
 *.o
-ui_*
-moc_*
-*.pb.*
 *.txt
+
