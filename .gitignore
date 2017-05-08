@@ -11,3 +11,4 @@ animation.xml
 ui_*
 moc_*
 *.pb.*
+*.txt
