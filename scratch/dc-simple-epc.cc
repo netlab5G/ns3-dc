@@ -212,7 +212,7 @@ main (int argc, char *argv[])
 
   serverApps.Start (Seconds (0.11));
   clientApps.Start (Seconds (0.11));
-  lteHelper->EnableTraces ();
+//  lteHelper->EnableTraces ();
   // Uncomment to enable PCAP tracing
   //p2ph.EnablePcapAll("lena-epc-first");
 
