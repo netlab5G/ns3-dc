@@ -742,6 +742,7 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   dev->SetAttribute ("LteEnbRrc", PointerValue (rrc)); 
   dev->SetAttribute ("LteHandoverAlgorithm", PointerValue (handoverAlgorithm));
   dev->SetAttribute ("LteFfrAlgorithm", PointerValue (ffrAlgorithm));
+  dev->SetAttribute ("DlEarfcn", UintegerValue (1000)); //DlEarfcn for SeNB, sychoi
 
   if (m_isAnrEnabled)
     {
@@ -762,6 +763,7 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   rrc->SetForwardUpCallback (MakeCallback (&LteEnbNetDevice::Receive, dev));
 
   NS_LOG_LOGIC ("set the propagation model frequencies");
+
   double dlFreq = LteSpectrumValueHelper::GetCarrierFrequency (dev->GetDlEarfcn ());
   NS_LOG_LOGIC ("DL freq: " << dlFreq);
   bool dlFreqOk = m_downlinkPathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (dlFreq));
@@ -1228,8 +1230,8 @@ LteHelper::AttachDc (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice, Ptr<EpcT
   Ptr<LteEnbNetDevice> enbLteDevice = enbDevice->GetObject<LteEnbNetDevice> ();
 
   Ptr<EpcUeNas> ueNas = ueLteDevice->GetNas ();
-  ueNas->ConnectDc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ());
 
+  ueNas->ConnectDc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ()); //sychoi
   if (m_epcHelper != 0)
     {
       // activate default EPS bearer
