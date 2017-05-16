@@ -44,20 +44,64 @@ using namespace ns3;
  * It also  starts yet another flow between each UE pair.
  */
 
-NS_LOG_COMPONENT_DEFINE ("EpcDcTcpExample");
+class MyAppTag : public Tag
+{
+public:
+	MyAppTag ()
+	{
+	}
+
+	MyAppTag (Time sendTs) : m_sendTs (sendTs)
+	{
+	}
+
+  static TypeId GetTypeId (void)
+  {
+    static TypeId tid = TypeId ("ns3::MyAppTag")
+      .SetParent<Tag> ()
+      .AddConstructor<MyAppTag> ();
+    return tid;
+  }
+
+  virtual TypeId  GetInstanceTypeId (void) const
+  {
+    return GetTypeId ();
+  }
+
+  virtual void  Serialize (TagBuffer i) const
+  {
+  	i.WriteU64 (m_sendTs.GetNanoSeconds());
+  }
+
+  virtual void  Deserialize (TagBuffer i)
+  {
+  	m_sendTs = NanoSeconds (i.ReadU64 ());
+  }
+
+  virtual uint32_t  GetSerializedSize () const
+  {
+  	return sizeof (m_sendTs);
+  }
+
+  virtual void Print (std::ostream &os) const
+  {
+  	std::cout << m_sendTs;
+  }
+
+	Time m_sendTs;
+};
+
 
 class MyApp : public Application
 {
 public:
-  MyApp ();
-  virtual ~MyApp ();
 
-  /**
-   * Register this type.
-   * \return The TypeId.
-   */
-  static TypeId GetTypeId (void);
+  MyApp ();
+  virtual ~MyApp();
+  void ChangeDataRate (DataRate rate);
   void Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate);
+
+
 
 private:
   virtual void StartApplication (void);
@@ -88,19 +132,9 @@ MyApp::MyApp ()
 {
 }
 
-MyApp::~MyApp ()
+MyApp::~MyApp()
 {
   m_socket = 0;
-}
-/* static */
-TypeId MyApp::GetTypeId (void)
-{
-  static TypeId tid = TypeId ("MyApp")
-    .SetParent<Application> ()
-    .SetGroupName ("Tutorial")
-    .AddConstructor<MyApp> ()
-    ;
-  return tid;
 }
 
 void
@@ -111,6 +145,12 @@ MyApp::Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t
   m_packetSize = packetSize;
   m_nPackets = nPackets;
   m_dataRate = dataRate;
+}
+
+void
+MyApp::ChangeDataRate (DataRate rate)
+{
+	m_dataRate = rate;
 }
 
 void
@@ -142,23 +182,26 @@ MyApp::StopApplication (void)
 void
 MyApp::SendPacket (void)
 {
-  Ptr<Packet> packet = Create<Packet> (m_packetSize);
-  m_socket->Send (packet);
+	Ptr<Packet> packet = Create<Packet> (m_packetSize);
+	MyAppTag tag (Simulator::Now ());
 
-  if (++m_packetsSent < m_nPackets)
-    {
-      ScheduleTx ();
-    }
+	m_socket->Send (packet);
+  	if (++m_packetsSent < m_nPackets)
+	{
+	    ScheduleTx ();
+	}
 }
+
+
 
 void
 MyApp::ScheduleTx (void)
 {
-  if (m_running)
-    {
-      Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
-      m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
-    }
+	if (m_running)
+	{
+		Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
+		m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
+	}
 }
 /*
 static void
@@ -206,14 +249,14 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 int
 main (int argc, char *argv[])
 {
-  double simTime = 5.0;
+  double simTime = 3.0;
   double startTime =1.0;
   double distance = 60.0;
   double interPacketInterval = 100;
   int log_packetflow = 0;
   double ex_time=0;
   uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
- // int downlinkRb =200;
+  int downlinkRb =100;
   // Command line arguments
   CommandLine cmd;
   cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
@@ -261,9 +304,9 @@ main (int argc, char *argv[])
   }
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
 Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-///Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 *1024 * 1024));
+//Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 *1024 * 1024));
 ///Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_UM_ALWAYS));
- //Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1* 1024*1024));
+// Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1* 1024*1024));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -359,7 +402,8 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
   NetDeviceContainer ueLteDevs = lteHelper->InstallDcUeDevice (ueNodes); // woody
 
   lteHelper->NotifyEnbNeighbor (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
-
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
+  	lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
   // Install the IP stack on the UEs
   NS_LOG_UNCOND("# install the IP stack on the UEs");
   internet.Install (ueNodes);
@@ -408,7 +452,7 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
   Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 50000000, DataRate ("150Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1360, 8000000, DataRate ("150Mbps"));
   remoteHost->AddApplication (app);
 
   app->SetStartTime (Seconds (startTime));
@@ -430,26 +474,26 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
     Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("tcp_congetion_window.txt");
     	ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 
-
   	p2ph.EnablePcapAll("dc-tcp");
-
-    	  app->SetStopTime(Seconds(simTime));
+    app->SetStopTime(Seconds(simTime));
   Simulator::Stop(Seconds(simTime+0.5));
   NS_LOG_UNCOND("# Run simulation");
   Simulator::Run();
   Ptr<PacketSink> sink = serverApps.Get (0)->GetObject<PacketSink> ();
 
-
-
   //double lteThroughput = sum*8.0 / (temp1*1000000);
 	//= sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - 0.11));
 
   std ::cout << temp1 << ":::::" << sum<< std::endl;
+  std::cout<< 8.0*sum/temp1 << std::endl;
+
   double lteThroughput = sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - startTime));
   NS_LOG_UNCOND ("UE(" << ueIpIface.GetAddress(0) <<") lte throughput: " << lteThroughput << " Mbps");
 
   Simulator::Destroy();
-  std::ofstream output("new_output_0508_tcpnewreno.txt", std::ios::app);
+ // std::ofstream output("new_output_0515_tcpnewreno.txt", std::ios::app);
+  std::ofstream output("new_output_0515_tcpnewreno_noReordering.txt", std::ios::app);
+
     	output<< "expired_time" << "\t" << ex_time << "\t"
     			<< "throughput" << "\t" << lteThroughput << "\t"
 				"RTT"<< "\t" << RTT_value <<
@@ -457,4 +501,5 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
   return 0;
 
 }
+
 

@@ -174,7 +174,7 @@ RxDrop (Ptr<PcapFileWrapper> file, Ptr<const Packet> p)
 int
 main (int argc, char *argv[])
 {
-  double simTime = 1.1;
+  double simTime = 5.0;
   double distance = 60.0;
   double interPacketInterval = 100;
   int log_packetflow = 1;
