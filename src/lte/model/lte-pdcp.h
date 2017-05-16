@@ -29,6 +29,7 @@
 #include "ns3/lte-pdcp-sap.h"
 #include "ns3/lte-rlc-sap.h"
 
+
 namespace ns3 {
 
 /**
@@ -43,7 +44,7 @@ public:
   virtual ~LtePdcp ();
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
-
+  void IsEnbPdcp (void);
   /**
    *
    *
@@ -86,7 +87,7 @@ public:
    */
   LteRlcSapUser* GetLteRlcSapUser ();
 
-  static const uint16_t MAX_PDCP_SN = 4096;
+ static const uint16_t MAX_PDCP_SN = 4096;
 
   /**
    * Status variables of the PDCP
@@ -97,7 +98,11 @@ public:
     uint16_t txSn; ///< TX sequence number
     uint16_t rxSn; ///< RX sequence number
   };
-
+  struct BufferedPackets{
+ 	  uint16_t sequenceNumber;
+ 	  LtePdcpSapUser::ReceivePdcpSduParameters params;
+ 	  uint16_t RX_HFN;
+   };
   /** 
    * 
    * \return the current status of the PDCP
@@ -134,9 +139,9 @@ public:
   typedef void (* PduRxTracedCallback)
     (const uint16_t rnti, const uint8_t lcid,
      const uint32_t size, const uint64_t delay);
-
-  void IsEnbPdcp (); // woody3C
-
+  void BufferingAndReordering(Ptr<Packet> p);
+  void printData(std::string filename, uint16_t SN);
+  void t_ReordringTimer_Expired();
 protected:
   // Interface provided to upper RRC entity
   virtual void DoTransmitPdcpSdu (Ptr<Packet> p);
@@ -153,7 +158,14 @@ protected:
 
   uint16_t m_rnti;
   uint8_t m_lcid;
+  int k;
+   //sjkang
+   int receivedPDCP_SN;
+   int Reordering_PDCP_RX_COUNT;
+   int Next_PDCP_RX_SN;
 
+ std::map <uint16_t,LtePdcpSapUser::ReceivePdcpSduParameters> PdcpBuffer;
+ EventId t_ReorderingTimer;
   /**
    * Used to inform of a PDU delivery to the RLC SAP provider.
    * The parameters are RNTI, LCID and bytes delivered
@@ -171,14 +183,18 @@ private:
    */
   uint16_t m_txSequenceNumber;
   uint16_t m_rxSequenceNumber;
-
+   bool check;
   /**
    * Constants. See section 7.2 in TS 36.323
    */
-  static const uint16_t m_maxPdcpSn = 4095;
-
-  uint16_t isEnbPdcp; // woody3C
-
+   static const uint16_t m_maxPdcpSn=4095;
+   static const int reorderingWindow =2048;
+   int Last_Submitted_PDCP_RX_SN;
+   uint16_t *temp ;
+  Time  expiredTime;
+   // bool CheckReodering_PDCP_RX_COUNT_1;
+    int randomSequence[10000] ;
+    uint16_t isEnbPdcp;
 };
 
 
