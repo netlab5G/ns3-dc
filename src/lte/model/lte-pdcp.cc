@@ -237,7 +237,8 @@ void
 LtePdcp::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
-  NS_LOG_INFO ("*UE PDCP receives packet " << this);
+  if (isEnbPdcp) NS_LOG_INFO ("*eNB PDCP receives packet " << this);
+  else  NS_LOG_INFO ("*UE PDCP receives packet " << this);
 
   // Receiver timestamp
   PdcpTag pdcpTag;

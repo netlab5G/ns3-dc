@@ -213,6 +213,7 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("LteEnbMac", LOG_DEBUG);
 //  LogComponentEnable ("LteRlcUm", LOG_LOGIC);
 //  LogComponentEnable ("EpcX2", LOG_FUNCTION);
+//  LogComponentEnable ("LteNetDevice", LOG_FUNCTION);
 
   if (log_packetflow){
     LogComponentEnable ("LtePdcp", LOG_INFO);
@@ -222,6 +223,9 @@ main (int argc, char *argv[])
     LogComponentEnable ("PacketSink", LOG_INFO);
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
+
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
