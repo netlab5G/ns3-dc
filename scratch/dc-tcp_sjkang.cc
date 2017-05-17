@@ -206,7 +206,7 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 int
 main (int argc, char *argv[])
 {
-  double simTime = 5.0;
+  double simTime = 8.0;
   double startTime =1.0;
   double distance = 60.0;
   double interPacketInterval = 100;
@@ -221,9 +221,6 @@ main (int argc, char *argv[])
   cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
   cmd.AddValue("ex_time","expired time in PDCP", ex_time);
   cmd.Parse(argc, argv);
-
-
-
 
   //LogComponentEnable ("LteHelper", LOG_FUNCTION);
   //LogComponentEnable ("PointToPointEpcHelper", LOG_FUNCTION);
@@ -259,11 +256,11 @@ main (int argc, char *argv[])
     LogComponentEnable ("PacketSink", LOG_INFO);
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
+
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
-Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-///Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 *1024 * 1024));
-///Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_UM_ALWAYS));
- //Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1* 1024*1024));
+  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
+//Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 *1024 * 1024));
+//Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1* 1024*1024));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -271,7 +268,7 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
   lteHelper->SetEpcHelper (epcHelper);
 
 //  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
-  //	lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
+//  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
@@ -282,7 +279,7 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
 
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
-   // Create a single RemoteHost
+  // Create a single RemoteHost
   NS_LOG_UNCOND("# Create a remote host");
   NodeContainer remoteHostContainer;
   remoteHostContainer.Create (1);
@@ -352,6 +349,7 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
 	mobility.Install (enbNodes);
 	mobility.Install (ueNodes);
 	mobility.Install (senbNodes);
+
   // Install LTE Devices to the nodes
   NS_LOG_UNCOND("# Install LTE device to the nodes");
   NetDeviceContainer enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
@@ -408,52 +406,51 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
   Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 50000000, DataRate ("150Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1360, -1, DataRate ("150Mbps"));
   remoteHost->AddApplication (app);
 
   app->SetStartTime (Seconds (startTime));
   serverApps.Start (Seconds (startTime));
 //  clientApps.Start (Seconds (0.11));
-  lteHelper->EnableTraces ();
+//  lteHelper->EnableTraces ();
   // Uncomment to enable PCAP tracing
   //p2ph.EnablePcapAll("lena-epc-first");
 
 
 
   AsciiTraceHelper asciiTraceHelper;
-   Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("packet_size.txt");
-    serverApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
+  Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("trace_packet_size.txt");
+  serverApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
 
-    Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("RTT_.txt");
-    	ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream4));
+  Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("trace_RTT.txt");
+  ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream4));
 
-    Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("tcp_congetion_window.txt");
-    	ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
+  Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("trace_tcp_congestion_window.txt");
+  ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 
 
-  	p2ph.EnablePcapAll("dc-tcp");
+ // p2ph.EnablePcapAll("dc-tcp");
 
-    	  app->SetStopTime(Seconds(simTime));
+  app->SetStopTime(Seconds(simTime));
   Simulator::Stop(Seconds(simTime+0.5));
+
   NS_LOG_UNCOND("# Run simulation");
   Simulator::Run();
   Ptr<PacketSink> sink = serverApps.Get (0)->GetObject<PacketSink> ();
 
-
-
   //double lteThroughput = sum*8.0 / (temp1*1000000);
 	//= sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - 0.11));
 
-  std ::cout << temp1 << ":::::" << sum<< std::endl;
+  std ::cout << "last packet Rx time: " << temp1 << "s, total Tx size: " << sum << std::endl;
   double lteThroughput = sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - startTime));
   NS_LOG_UNCOND ("UE(" << ueIpIface.GetAddress(0) <<") lte throughput: " << lteThroughput << " Mbps");
 
   Simulator::Destroy();
-  std::ofstream output("new_output_0508_tcpnewreno.txt", std::ios::app);
-    	output<< "expired_time" << "\t" << ex_time << "\t"
-    			<< "throughput" << "\t" << lteThroughput << "\t"
-				"RTT"<< "\t" << RTT_value <<
-				std ::endl;
+
+//  std::ofstream output("new_output_0508_tcpnewreno.txt", std::ios::app);
+/*  output << "expired_time" << "\t" << ex_time << "\t"
+  	 << "throughput" << "\t" << lteThroughput << "\t"
+	 << "RTT"<< "\t" << RTT_value << std ::endl; */
   return 0;
 
 }
