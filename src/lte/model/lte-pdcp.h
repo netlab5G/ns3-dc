@@ -207,6 +207,10 @@ private:
   int randomSequence[10000] ;
 
   uint16_t isEnbPdcp; // woody3C
+  uint16_t m_lastSubmittedPdcpRxSn; // woody
+  LtePdcpSapUser::ReceivePdcpSduParameters m_pdcpBuffer[4096]; // woody
+  bool m_pdcpBufferBitmap[4096];
+  uint16_t m_pdcpBufferSize;
 };
 
 

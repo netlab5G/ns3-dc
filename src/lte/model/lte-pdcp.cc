@@ -90,6 +90,10 @@ LtePdcp::LtePdcp ()
   check =false;
 
   isEnbPdcp =0; // woody3C
+  m_lastSubmittedPdcpRxSn = -1;
+  int i;
+  for (i=0; i<4096; i++) m_pdcpBufferBitmap[i] = 0;
+  m_pdcpBufferSize = 0;
 }
 
 LtePdcp::~LtePdcp ()
@@ -105,7 +109,7 @@ LtePdcp::GetTypeId (void)
     .SetGroupName("Lte")
 	.AddConstructor<LtePdcp>()
 	.AddAttribute("ExpiredTime", "PDCP reordering time",
-			 TimeValue(MilliSeconds(10)),
+			 TimeValue(MilliSeconds(100)),
 			 MakeTimeAccessor (&LtePdcp::expiredTime),
              MakeTimeChecker ())
     .AddTraceSource ("TxPDU",
@@ -303,6 +307,8 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
 
 void
 LtePdcp::BufferingAndReordering(Ptr<Packet> p){
+	NS_LOG_FUNCTION (this);
+//NS_LOG_UNCOND("BufferingAndReordering");
 ///cout << expiredTime <<endl;
 //cout << p->GetSize( ) << endl;
 	PdcpTag pdcpTag;
@@ -327,7 +333,59 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){
 	params.rnti = m_rnti;
 	params.lcid = m_lcid;
 
+	// woody, reordering implementation with new method
+	uint16_t pdcpSN = pdcpHeader.GetSequenceNumber();
+	printData("RX_SN", pdcpSN);
+//NS_LOG_UNCOND("Rx " << pdcpSN << " lastSubmitted+1 " << (uint16_t)(m_lastSubmittedPdcpRxSn+1));
+
+	if (m_pdcpBufferBitmap[pdcpSN] == 1) NS_LOG_UNCOND("overlapping pdcp sequence number"); // need discard
+	if ((pdcpSN - m_lastSubmittedPdcpRxSn + 4096)%4096 > reorderingWindow){
+		NS_LOG_UNCOND("out of reordering window"); // need implementation
+		return;
+	}
+
+//NS_LOG_UNCOND("log pdcpSN " << pdcpSN << " m_lastSubmittedPDcpRxSn " << m_lastSubmittedPdcpRxSn << " (pdcpSN-m_lastSubmittedPdcpRxSn)%4096 " <<  (pdcpSN - m_lastSubmittedPdcpRxSn)%4096); 
+
+	m_pdcpBuffer[pdcpSN] = params;
+	m_pdcpBufferBitmap[pdcpSN] = 1;
+	m_pdcpBufferSize ++;
+
+
+	if (t_ReorderingTimer.IsRunning()){
+//NS_LOG_UNCOND("Reordering_PDCP_RX_COUNT " << Reordering_PDCP_RX_COUNT << " bitmap " << m_pdcpBufferBitmap[Reordering_PDCP_RX_COUNT]);
+		if(m_pdcpBufferBitmap[Reordering_PDCP_RX_COUNT] == 1){
+//NS_LOG_UNCOND("cancel timer since m_pdcpBufferBitmap[(m_lastSubmittedPdcpRxSn + 1)%4096]] == 1");
+			t_ReorderingTimer.Cancel();
+		}
+	}
+
+	uint16_t snCounter;
+	for (snCounter = (m_lastSubmittedPdcpRxSn + 1)%4096 ; m_pdcpBufferBitmap[snCounter] == 1; snCounter = (snCounter+1)%4096){
+NS_LOG_UNCOND("Rx " << pdcpSN << " RO " << snCounter);
+//NS_LOG_UNCOND("Current_bitmap " << m_pdcpBufferBitmap[snCounter] << " Next_bitmap " << m_pdcpBufferBitmap[(snCounter+2)%4096]);
+     		m_pdcpSapUser->ReceivePdcpSdu(m_pdcpBuffer[snCounter]);
+		m_pdcpBufferBitmap[snCounter] = 0;
+		m_pdcpBufferSize --;
+		m_lastSubmittedPdcpRxSn = snCounter;
+      		printData("Reordered_SN", snCounter);
+	}
+
+	Reordering_PDCP_RX_COUNT = snCounter; // Next PDCP RX SN
+//NS_LOG_UNCOND("Reordering_PDCP_RX_COUNT set " << Reordering_PDCP_RX_COUNT << " isRunning " << t_ReorderingTimer.IsRunning() << " RX " << pdcpSN << " last_submitted " << m_lastSubmittedPdcpRxSn);
+
+/*
+	if (!t_ReorderingTimer.IsRunning()){
+//NS_LOG_UNCOND("buffer size " << m_pdcpBufferSize);
+		if (m_pdcpBufferSize != 0){
+			t_ReorderingTimer = Simulator::Schedule(expiredTime, &LtePdcp::t_ReordringTimer_Expired, this);
+//NS_LOG_UNCOND("set reordering timer");
+		}
+	}
+*/
+	return;
+
 	/****************** PDCP Reordering Implementation by sjkang ********************************/
+/*
 	BufferedPackets PacketInBuffer;
 	PacketInBuffer.sequenceNumber = pdcpHeader.GetSequenceNumber();
 	PacketInBuffer.params = params;
@@ -426,13 +484,13 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){
 
 	if (!t_ReorderingTimer.IsRunning()){
 		if (PdcpBuffer.size()>=1){
- 	 		t_ReorderingTimer = // ??
+ 	 		t_ReorderingTimer =  
 			Simulator::Schedule(expiredTime, &LtePdcp::t_ReordringTimer_Expired, this);
 
 			Reordering_PDCP_RX_COUNT = Next_PDCP_RX_SN;
 		}
 	}
-
+*/
 //cout << "Buffer size " <<  PdcpBuffer.size() << endl;
 //ut << PdcpBuffer.size () << endl ;
 /*
@@ -453,8 +511,38 @@ if (PdcpBuffer.size ()>=1 ){
 
 void
 LtePdcp::t_ReordringTimer_Expired(){
+	NS_LOG_FUNCTION(this);
+//NS_LOG_UNCOND("Reordering Timer expired with buffer size " << m_pdcpBufferSize << " waiting for " << Reordering_PDCP_RX_COUNT);
 
-	Reordering_PDCP_RX_COUNT = Next_PDCP_RX_SN;
+	uint16_t snCounter;
+	for (snCounter = Reordering_PDCP_RX_COUNT; m_pdcpBufferBitmap[snCounter] == 0; snCounter = (snCounter+1)%4096){
+		if (snCounter == (Reordering_PDCP_RX_COUNT - 1)%4096) NS_LOG_UNCOND("Error, reordering timer expired with empty pdcp buffer"); // need to handle error
+	}
+
+//NS_LOG_UNCOND("Reordering scan from " << snCounter);
+	for ( ; m_pdcpBufferBitmap[snCounter] == 1; snCounter = (snCounter+1)%4096){
+//NS_LOG_UNCOND("RO " << snCounter);
+//NS_LOG_UNCOND("Current_bitmap " << m_pdcpBufferBitmap[snCounter] << " Next_bitmap " << m_pdcpBufferBitmap[(snCounter+2)%4096]);
+     		m_pdcpSapUser->ReceivePdcpSdu(m_pdcpBuffer[snCounter]);
+		m_pdcpBufferBitmap[snCounter] = 0;
+		m_pdcpBufferSize --;
+		m_lastSubmittedPdcpRxSn = snCounter;
+      		printData("Reordered_SN", snCounter);
+	}
+
+	Reordering_PDCP_RX_COUNT = snCounter; // Next PDCP RX SN
+//NS_LOG_UNCOND("Reordering_PDCP_RX_COUNT set " << Reordering_PDCP_RX_COUNT << " isRunning " << t_ReorderingTimer.IsRunning() << " last_submitted " << m_lastSubmittedPdcpRxSn << " Expired case");
+
+	if (m_pdcpBufferSize != 0){
+		t_ReorderingTimer = Simulator::Schedule(expiredTime, &LtePdcp::t_ReordringTimer_Expired, this);
+//NS_LOG_UNCOND("set reordering timer");
+	}
+	
+	return;	
+
+
+//*************************sjkang*****************************//
+/*	Reordering_PDCP_RX_COUNT = Next_PDCP_RX_SN;
 
 //cout <<"received number  " <<  receivedPDCP_SN << endl;
 //   cout << "Next number  " << Next_PDCP_RX_SN << endl;
@@ -471,9 +559,9 @@ LtePdcp::t_ReordringTimer_Expired(){
 	// sort the SN in acsending order
 	std::sort(temp , temp +i);
 
-/*
- * ETSI TS 136 323  5.1.2.4.2 procedure: when t- reordering expires
- */
+
+// ETSI TS 136 323  5.1.2.4.2 procedure: when t- reordering expires
+
 
 ////////////////////////////////////////////////////
 	for (uint16_t c=0; c<i; c++){
@@ -519,7 +607,7 @@ LtePdcp::t_ReordringTimer_Expired(){
 	{
 		Reordering_PDCP_RX_COUNT = Next_PDCP_RX_SN;
 		t_ReorderingTimer= Simulator::Schedule(expiredTime, &LtePdcp::t_ReordringTimer_Expired, this);
-	}
+	}*/
 }
 
 

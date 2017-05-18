@@ -671,7 +671,7 @@ UeManager::SendData3C (uint8_t bid, Ptr<Packet> p) // woody3C
   rlcSapProvider->TransmitPdcpPdu (params);
 }
 
-int t_splitter = 1; // woody3C, for debugging
+int t_splitter = 0; // woody3C, for debugging
 
 void
 UeManager::SendData (uint8_t bid, Ptr<Packet> p)
@@ -712,13 +712,13 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
         else if (bearerInfo->m_dcType == 2){
 	if (t_splitter == 0){
             NS_LOG_INFO("***MeNB forward packet toward SeNB");
-            t_splitter = 1;
+//            t_splitter = 1;
             m_currentBid = bid;
             pdcpSapProvider->TransmitPdcpSduDc (params);
           }
           else {
             NS_LOG_INFO("***MeNB transmits packet directly");
-            t_splitter = 0;
+//            t_splitter = 0;
             pdcpSapProvider->TransmitPdcpSdu (params);
           }
         }
