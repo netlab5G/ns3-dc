@@ -144,6 +144,7 @@ LteUeRrc::LteUeRrc ()
   m_rrcSapProvider = new MemberLteUeRrcSapProvider<LteUeRrc> (this);
   m_drbPdcpSapUser = new LtePdcpSpecificLtePdcpSapUser<LteUeRrc> (this);
   m_asSapProvider = new MemberLteAsSapProvider<LteUeRrc> (this);
+  m_isDc = false; // woody
 }
 
 
@@ -259,6 +260,12 @@ LteUeRrc::GetTypeId (void)
   return tid;
 }
 
+void
+LteUeRrc::SetDc () // woody
+{
+  NS_LOG_FUNCTION (this);
+  m_isDc = true;
+}
 
 void
 LteUeRrc::SetLteUeCphySapProvider (LteUeCphySapProvider * s)
@@ -1275,17 +1282,19 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
               pdcp->SetLtePdcpSapUser (m_drbPdcpSapUser);
               pdcp->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ());
 
+              if (m_isDc){ // woody3C
+	        std::map<uint8_t, LteRlcSapUser*>::iterator itRlc = m_bid2RlcSapUserMapDc.find (drbInfo->m_drbIdentity);
+                if (itRlc == m_bid2RlcSapUserMapDc.end()){
+		  m_rrcDc->SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
+		  SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
 
-	      std::map<uint8_t, LteRlcSapUser*>::iterator itRlc = m_bid2RlcSapUserMapDc.find (drbInfo->m_drbIdentity);
-              if (itRlc == m_bid2RlcSapUserMapDc.end()){
-		m_rrcDc->SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
-		SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
-
-                rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
+                  rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
+                }
+                else{
+                  rlc->SetLteRlcSapUser (itRlc->second);
+                }
               }
-              else{
-                rlc->SetLteRlcSapUser (itRlc->second);
-              }
+	      else rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
 
 //	      if(m_rlcSapUserDc){
 //                rlc->SetLteRlcSapUser (m_rlcSapUserDc);

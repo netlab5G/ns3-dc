@@ -409,7 +409,6 @@ void
 LteRlcUm::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
-
   // Receiver timestamp
   RlcTag rlcTag;
   Time delay;

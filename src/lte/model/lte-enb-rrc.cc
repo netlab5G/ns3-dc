@@ -657,7 +657,7 @@ void
 UeManager::SendData3C (uint8_t bid, Ptr<Packet> p) // woody3C
 {
   NS_LOG_FUNCTION (this << p << (uint16_t) bid);
-  NS_LOG_INFO ("**SeNB receives PDCP PDU through X2 interface");
+  NS_LOG_INFO ("***SeNB receives PDCP PDU through X2 interface");
 
   uint8_t drbid = Bid2Drbid (bid);
   Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);

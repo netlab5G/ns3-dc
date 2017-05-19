@@ -294,10 +294,14 @@ public:
   void SetRrcDc (Ptr<LteUeRrc> rrcDc); // woody3C
   void SetLteRlcSapUserDc (uint8_t drbIdentity, LteRlcSapUser* p); // woody3C
 
+  void SetDc (); // woody
+
 private:
 
+  bool m_isDc; // woody
+
   Ptr<LteUeRrc> m_rrcDc; // woody3C
-  LteRlcSapUser* m_rlcSapUserDc; // woodddy3C
+  LteRlcSapUser* m_rlcSapUserDc; // woody3C
 
   std::map<uint8_t, LteRlcSapUser*> m_bid2RlcSapUserMapDc; // woody3C
 

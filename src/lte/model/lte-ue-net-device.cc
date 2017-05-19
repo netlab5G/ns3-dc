@@ -159,7 +159,7 @@ LteUeNetDevice::UpdateConfig (void)
                          << " CSG ID " << m_csgId);
       m_nas->SetImsi (m_imsi);
       m_rrc->SetImsi (m_imsi);
-      m_rrcDc->SetImsi (m_imsi); // woody
+      if (m_isDc) m_rrcDc->SetImsi (m_imsi); // woody
       m_nas->SetCsgId (m_csgId); // this also handles propagation to RRC
     }
   else

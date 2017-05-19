@@ -268,8 +268,8 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
       NS_ASSERT (bidIt != rntiIt->second.end ());
       uint32_t teid = bidIt->second;
 
-      if (m_isSenb) NS_LOG_INFO ("**SeNB, " << Simulator::Now ().GetSeconds () << "s a packet UL"); // woody, for observing UL packet flow
-      else NS_LOG_INFO ("**MeNB, " << Simulator::Now ().GetSeconds () << "s a packet UL");
+      if (m_isSenb) NS_LOG_INFO ("***SeNB, " << Simulator::Now ().GetSeconds () << "s a packet UL"); // woody, for observing UL packet flow
+      else NS_LOG_INFO ("***MeNB, " << Simulator::Now ().GetSeconds () << "s a packet UL");
 
       SendToS1uSocket (packet, teid);
     }
@@ -287,7 +287,7 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   Address from;
   Ptr<Packet> packet = socket->RecvFrom (from);
 
-  NS_LOG_INFO ("**EnB, " << Simulator::Now ().GetSeconds () << "s "
+  NS_LOG_INFO ("***EnB, " << Simulator::Now ().GetSeconds () << "s "
               <<  packet->GetSize () << " bytes from "
               << InetSocketAddress::ConvertFrom(from).GetIpv4 ()
               << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());

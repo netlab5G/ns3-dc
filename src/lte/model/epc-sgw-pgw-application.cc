@@ -199,12 +199,12 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
 
     	  if (senbAddrIt == m_dcEnbAddrByTeidMap.end ())
     	  {
-		  NS_LOG_INFO ("***Send to MeNB " << enbAddr << " with teid " << teid);
+		  NS_LOG_INFO ("**Send to MeNB " << enbAddr << " with teid " << teid);
     		  SendToS1uSocket (packet, enbAddr, teid);
     	  }
     	  else // need to check if senbAddr is correct or not.
     	  {
-		  NS_LOG_INFO ("***Send to SeNB " << senbAddr << " with teid " << teid);
+		  NS_LOG_INFO ("**Send to SeNB " << senbAddr << " with teid " << teid);
     		  SendToS1uSocket (packet, senbAddr, teid);
     	  }
 
