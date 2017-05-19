@@ -2785,7 +2785,6 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
     }
   else
     { // In-sequence packet: ACK if delayed ack count allows
-NS_LOG_UNCOND("dalayed ACK");
       if (++m_delAckCount >= m_delAckMaxCount)
         {
           m_delAckEvent.Cancel ();
@@ -2794,11 +2793,11 @@ NS_LOG_UNCOND("dalayed ACK");
         }
       else if (m_delAckEvent.IsExpired ())
         {
-NS_LOG_UNCOND("schedule delayed ACK");
           m_delAckEvent = Simulator::Schedule (m_delAckTimeout,
                                                &TcpSocketBase::DelAckTimeout, this);
           NS_LOG_LOGIC (this << " scheduled delayed ACK at " <<
                         (Simulator::Now () + Simulator::GetDelayLeft (m_delAckEvent)).GetSeconds ());
+NS_LOG_UNCOND("schedule delayed ACK at " << (Simulator::Now() + Simulator::GetDelayLeft (m_delAckEvent)).GetSeconds());
         }
     }
   // Notify app to receive if necessary
@@ -2944,6 +2943,7 @@ TcpSocketBase::ReTxTimeout ()
 void
 TcpSocketBase::DelAckTimeout (void)
 {
+NS_LOG_UNCOND("delayed ACK timeout");
   m_delAckCount = 0;
   SendEmptyPacket (TcpHeader::ACK);
 }

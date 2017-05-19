@@ -712,7 +712,7 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
         else if (bearerInfo->m_dcType == 2){
 	  if (t_splitter == 1){
             NS_LOG_INFO("***MeNB forward packet toward SeNB");
-            t_splitter = 0;
+            t_splitter = 1;
             m_currentBid = bid;
             pdcpSapProvider->TransmitPdcpSduDc (params);
           }

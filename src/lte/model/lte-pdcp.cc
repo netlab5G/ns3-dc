@@ -190,6 +190,8 @@ LtePdcp::SetStatus (Status s)
 void
 LtePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
 {
+  if(isEnbPdcp) NS_LOG_INFO ("*eNB sends PDCP " << this << " at " << Simulator::Now().GetSeconds());
+  else NS_LOG_INFO ("*UE sends PDCP " << this << " at " << Simulator::Now().GetSeconds());
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
   LtePdcpHeader pdcpHeader;
@@ -266,6 +268,7 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
 {
 
   if ( isEnbPdcp ==1 ){
+          NS_LOG_INFO ("*eNB PDCP receives packet " << this << " at " << Simulator::Now().GetSeconds());
 	  PdcpTag pdcpTag;
 	  	  Time delay;
 	  	  NS_ASSERT_MSG (p->PeekPacketTag (pdcpTag), "PdcpTag is missing");
@@ -288,13 +291,13 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
 	  	 m_pdcpSapUser->ReceivePdcpSdu(params);
 
   }else {
+        NS_LOG_INFO ("*UE PDCP receives packet " << this << " at " << Simulator::Now().GetSeconds());
 
 	NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
   // Receiver timestamp
   BufferingAndReordering(p);
       }
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
-  NS_LOG_INFO ("*UE PDCP receives packet " << this);
 
 //BufferingAndReordering(p);
 }

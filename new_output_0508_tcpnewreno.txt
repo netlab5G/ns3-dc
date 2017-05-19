@@ -1,0 +1,17 @@
+expired_time	0	throughput	9.86583	RTT	0.0678578
+expired_time	0	throughput	9.83707	RTT	0.0328712
+expired_time	0	throughput	9.43024	RTT	0.0601625
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	1.862	RTT	0.0425026
+expired_time	0	throughput	1.862	RTT	0.0425026
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278
+expired_time	0	throughput	13.5374	RTT	0.0357278

@@ -206,7 +206,7 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 int
 main (int argc, char *argv[])
 {
-  double simTime = 15.0;
+  double simTime = 5.0;
   double startTime =1.0;
   double distance = 60.0;
   double interPacketInterval = 100;
@@ -262,7 +262,7 @@ main (int argc, char *argv[])
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
-Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
+  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
 ///Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 *1024 * 1024));
 ///Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_UM_ALWAYS));
  //Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1* 1024*1024));
@@ -410,7 +410,7 @@ Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::Lte
   Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("10Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1360, 50000000, DataRate ("150Mbps"));
   remoteHost->AddApplication (app);
 
   app->SetStartTime (Seconds (startTime));

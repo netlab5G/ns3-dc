@@ -536,6 +536,7 @@ TcpL4Protocol::SendPacketV4 (Ptr<Packet> packet, const TcpHeader &outgoing,
                              const Ipv4Address &saddr, const Ipv4Address &daddr,
                              Ptr<NetDevice> oif) const
 {
+NS_LOG_UNCOND("Send ACK seq " << outgoing.GetSequenceNumber() << " ACKnum " << outgoing.GetAckNumber());
   NS_LOG_FUNCTION (this << packet << saddr << daddr << oif);
   NS_LOG_LOGIC ("TcpL4Protocol " << this
                                  << " sending seq " << outgoing.GetSequenceNumber ()

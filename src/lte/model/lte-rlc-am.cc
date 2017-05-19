@@ -155,6 +155,7 @@ LteRlcAm::DoDispose ()
 void
 LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 {
+NS_LOG_UNCOND("RLC, send packet, " << this);
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
   /** Store arrival time */
@@ -188,6 +189,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 void
 LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 {
+NS_LOG_UNCOND("RLC, DoNotifyTxOpportunity " << this);
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
 
   if (bytes < 4)
@@ -1556,6 +1558,7 @@ LteRlcAm::ReassembleAndDeliver (Ptr<Packet> packet)
 void
 LteRlcAm::DoReportBufferStatus (void)
 {
+NS_LOG_UNCOND("RLC, DoReportBufferStatus, txonQ " << m_txonBufferSize << " " << this << " " << Simulator::Now().GetSeconds() << "s");
   NS_LOG_FUNCTION (this);
 
   Time now = Simulator::Now ();
