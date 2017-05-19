@@ -206,11 +206,11 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 int
 main (int argc, char *argv[])
 {
-  double simTime = 3.0;
+  double simTime = 15.0;
   double startTime =1.0;
   double distance = 60.0;
   double interPacketInterval = 100;
-  int log_packetflow = 0;
+  int log_packetflow = 1;
   double ex_time=0;
   uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
  // int downlinkRb =200;
@@ -250,6 +250,8 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("LteEnbMac", LOG_DEBUG);
 //  LogComponentEnable ("LteRlcUm", LOG_LOGIC);
 //  LogComponentEnable ("EpcX2", LOG_FUNCTION);
+//  LogComponentEnable ("TcpSocketBase", LOG_FUNCTION);
+//  LogComponentEnable ("TcpSocketBase", LOG_DEBUG);
 
   if (log_packetflow){
     LogComponentEnable ("LtePdcp", LOG_INFO);
