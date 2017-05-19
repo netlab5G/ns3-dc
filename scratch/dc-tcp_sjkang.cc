@@ -210,7 +210,7 @@ main (int argc, char *argv[])
   double startTime =1.0;
   double distance = 60.0;
   double interPacketInterval = 100;
-  int log_packetflow = 0;
+  int log_packetflow = 1;
   double ex_time=0;
   uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
  // int downlinkRb =200;
@@ -273,7 +273,7 @@ main (int argc, char *argv[])
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
 //  Config::SetDefault("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(10.0)));
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+//  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
 
