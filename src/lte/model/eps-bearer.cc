@@ -67,6 +67,7 @@ EpsBearer::IsGbr () const
     case GBR_CONV_VIDEO:
     case GBR_GAMING:
     case GBR_NON_CONV_VIDEO:
+    case GBR_ULTRA_LOW_LAT: //sychoi 170520
       return true;
     case NGBR_IMS:
     case NGBR_VIDEO_TCP_OPERATOR:
@@ -104,6 +105,8 @@ EpsBearer::GetPriority () const
       return 8;
     case NGBR_VIDEO_TCP_DEFAULT:
       return 9;
+    case GBR_ULTRA_LOW_LAT: //sychoi 170520
+          return 1; //sychoi 170520
     default:
       NS_FATAL_ERROR ("unknown QCI value " << qci);
       return 0;
@@ -134,6 +137,8 @@ EpsBearer::GetPacketDelayBudgetMs () const
       return 300;
     case NGBR_VIDEO_TCP_DEFAULT:
       return 300;
+    case GBR_ULTRA_LOW_LAT: //sychoi 170520
+          return 1; //sychoi 170520
     default:
       NS_FATAL_ERROR ("unknown QCI value " << qci);
       return 0;
@@ -164,6 +169,8 @@ EpsBearer::GetPacketErrorLossRate () const
       return 1.0e-6;
     case NGBR_VIDEO_TCP_DEFAULT:
       return 1.0e-6;
+    case GBR_ULTRA_LOW_LAT: //sychoi 170520
+        	return 1.0e-6; //sychoi 170520
     default:
       NS_FATAL_ERROR ("unknown QCI value " << qci);
       return 0;

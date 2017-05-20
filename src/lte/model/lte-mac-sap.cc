@@ -33,7 +33,15 @@ LteMacSapUser::~LteMacSapUser ()
 {
 }
 
+void
+LteMacSapUser::NotifyDlHarqDeliveryFailure (uint8_t harqId) //sychoi 170520
+{
+}
 
+void
+LteMacSapUser::NotifyUlHarqDeliveryFailure (uint8_t harqId) //sychoi 170520
+{
+}
 
 
 } // namespace ns3

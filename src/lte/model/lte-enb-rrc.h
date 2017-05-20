@@ -828,7 +828,8 @@ public:
   enum LteEpsBearerToRlcMapping_t {RLC_SM_ALWAYS = 1,
                                    RLC_UM_ALWAYS = 2,
                                    RLC_AM_ALWAYS = 3,
-                                   PER_BASED = 4};
+                                   PER_BASED = 4,
+                                   RLC_UM_LOWLAT_ALWAYS = 5}; //sychoi 170520
 
   /**
    * TracedCallback signature for new Ue Context events.
@@ -1265,6 +1266,9 @@ private:
    * received. Exporting IMSI, cell ID, and RNTI.
    */
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
+
+  bool m_ismmWave; //sychoi 170520
+  uint32_t m_firstSibTime;		//sychoi 170520 time in ms of initial SIB
 
 }; // end of `class LteEnbRrc`
 

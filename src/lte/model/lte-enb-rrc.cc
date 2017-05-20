@@ -40,7 +40,7 @@
 #include <ns3/lte-rlc-um.h>
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
-
+#include <ns3/lte-rlc-um-lowlat.h>
 
 
 
@@ -1475,7 +1475,8 @@ LteEnbRrc::GetTypeId (void)
                    MakeEnumChecker (RLC_SM_ALWAYS, "RlcSmAlways",
                                     RLC_UM_ALWAYS, "RlcUmAlways",
                                     RLC_AM_ALWAYS, "RlcAmAlways",
-                                    PER_BASED,     "PacketErrorRateBased"))
+                                    PER_BASED,     "PacketErrorRateBased",
+                                    RLC_UM_LOWLAT_ALWAYS, "MmwRlcUmAlways")) //sychoi 170520
     .AddAttribute ("SystemInformationPeriodicity",
                    "The interval for sending system information (Time value)",
                    TimeValue (MilliSeconds (80)),
@@ -1575,6 +1576,18 @@ LteEnbRrc::GetTypeId (void)
                    UintegerValue (4),
                    MakeUintegerAccessor (&LteEnbRrc::m_rsrqFilterCoefficient),
                    MakeUintegerChecker<uint8_t> (0))
+
+    .AddAttribute ("mmWaveDevice", //sychoi 170520
+    		       "Indicates whether RRC is for mmWave base station",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&LteEnbRrc::m_ismmWave),
+                   MakeBooleanChecker ())
+    .AddAttribute ("FirstSibTime", //sychoi170520
+                   "Time in ms of initial SIB message",
+                   // i.e. the variable k in 3GPP TS 36.331 section 5.5.3.2
+                   UintegerValue (16),
+                   MakeUintegerAccessor (&LteEnbRrc::m_firstSibTime),
+                   MakeUintegerChecker<uint32_t> (0))
 
     // Trace sources
     .AddTraceSource ("NewUeContext",
@@ -1845,8 +1858,12 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
   m_ulBandwidth = ulBandwidth;
   m_cellId = cellId;
   m_cphySapProvider->SetCellId (cellId);
-  m_ffrRrcSapProvider->SetCellId (cellId);
-  m_ffrRrcSapProvider->SetBandwidth(ulBandwidth, dlBandwidth);
+
+  if (!m_ismmWave) //sychoi 170520
+  {
+	  m_ffrRrcSapProvider->SetCellId (cellId);
+	  m_ffrRrcSapProvider->SetBandwidth(ulBandwidth, dlBandwidth);
+  }
 
   /*
    * Initializing the list of UE measurement configuration (m_ueMeasConfig).
@@ -2436,6 +2453,10 @@ LteEnbRrc::GetRlcType (EpsBearer bearer)
         {
           return LteRlcAm::GetTypeId ();
         }
+      break;
+
+    case RLC_UM_LOWLAT_ALWAYS: //sychoi 170520
+      return LteRlcUmLowLat::GetTypeId ();
       break;
 
     default:

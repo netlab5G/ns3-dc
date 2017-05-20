@@ -243,9 +243,16 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
   // Receiver timestamp
   PdcpTag pdcpTag;
   Time delay;
+  /* sychoi170520
   NS_ASSERT_MSG (p->PeekPacketTag (pdcpTag), "PdcpTag is missing");
   p->RemovePacketTag (pdcpTag);
   delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();
+  */
+  if (p->FindFirstMatchingByteTag (pdcpTag)) //sychoi 170520
+      {
+        delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();
+      }
+
   m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
   LtePdcpHeader pdcpHeader;
