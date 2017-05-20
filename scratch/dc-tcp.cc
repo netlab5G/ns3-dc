@@ -171,13 +171,47 @@ RxDrop (Ptr<PcapFileWrapper> file, Ptr<const Packet> p)
 }
 */
 
+
+double  temp, tempPacketSize, temp1;
+double sum;
+static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{         temp1 = Simulator::Now().GetSeconds();
+     if (temp == Simulator::Now ().GetSeconds () ){
+        tempPacketSize += packet->GetSize();
+        //
+         return;
+            }
+       else{
+    	   sum += tempPacketSize;
+            *stream->GetStream () << temp << "\t" << tempPacketSize << std::endl;
+          temp =  Simulator::Now ().GetSeconds () ;
+          tempPacketSize = packet->GetSize();
+           }
+}
+
+
+double RTT_value;
+static void
+RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
+	RTT_value = newRtt.GetSeconds();
+}
+static void
+CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
+}
+
 int
 main (int argc, char *argv[])
 {
-  double simTime = 1.1;
+  double simTime = 15;
   double distance = 60.0;
   double interPacketInterval = 100;
   int log_packetflow = 1;
+int startTime = 1;
+int ex_time = 0;
 
   uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
 
@@ -350,17 +384,49 @@ main (int argc, char *argv[])
   Ptr<MyApp> app = CreateObject<MyApp> ();
   app->Setup (ns3TcpSocket, sinkAddress, 1040, 1000, DataRate ("1Mbps"));
   remoteHost->AddApplication (app);
-  app->SetStartTime (Seconds (0.11));
+  app->SetStartTime (Seconds (startTime));
 
-  serverApps.Start (Seconds (0.11));
+  serverApps.Start (Seconds (startTime));
 //  clientApps.Start (Seconds (0.11));
 //  lteHelper->EnableTraces ();
   // Uncomment to enable PCAP tracing
   //p2ph.EnablePcapAll("lena-epc-first");
 
-  Simulator::Stop(Seconds(simTime));
+  AsciiTraceHelper asciiTraceHelper;
+   Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("packet_size.txt");
+    serverApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
+
+    Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("RTT_.txt");
+    	ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream4));
+
+    Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("tcp_congetion_window.txt");
+    	ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
+
+
+
+
+  Simulator::Stop(Seconds(simTime+0.5));
   NS_LOG_UNCOND("# Run simulation");
   Simulator::Run();
+
+
+  Ptr<PacketSink> sink = serverApps.Get (0)->GetObject<PacketSink> ();
+
+
+
+  //double lteThroughput = sum*8.0 / (temp1*1000000);
+	//= sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - 0.11));
+
+  std ::cout << temp1 << ":::::" << sum<< std::endl;
+  double lteThroughput = sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - startTime));
+  NS_LOG_UNCOND ("UE(" << ueIpIface.GetAddress(0) <<") lte throughput: " << lteThroughput << " Mbps");
+
+  Simulator::Destroy();
+  std::ofstream output("new_output_0508_tcpnewreno.txt", std::ios::app);
+    	output<< "expired_time" << "\t" << ex_time << "\t"
+    			<< "throughput" << "\t" << lteThroughput << "\t"
+				 <<
+				std ::endl;
 
   /*GtkConfigStore config;
   config.ConfigureAttributes();*/
