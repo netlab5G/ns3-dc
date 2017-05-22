@@ -671,7 +671,7 @@ UeManager::SendData3C (uint8_t bid, Ptr<Packet> p) // woody3C
   rlcSapProvider->TransmitPdcpPdu (params);
 }
 
-int t_splitter = 1; // woody3C, for debugging
+int t_splitter = 0; // woody3C, for debugging
 
 void
 UeManager::SendData (uint8_t bid, Ptr<Packet> p)

@@ -2224,7 +2224,6 @@ TcpSocketBase::SendEmptyPacket (uint8_t flags)
   header.SetFlags (flags);
   header.SetSequenceNumber (s);
   header.SetAckNumber (m_rxBuffer->NextRxSequence ());
-NS_LOG_UNCOND("SetAckNumber " << m_rxBuffer->NextRxSequence ());
   if (m_endPoint != 0)
     {
       header.SetSourcePort (m_endPoint->GetLocalPort ());
@@ -2785,7 +2784,6 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
     }
   else
     { // In-sequence packet: ACK if delayed ack count allows
-NS_LOG_UNCOND("dalayed ACK");
       if (++m_delAckCount >= m_delAckMaxCount)
         {
           m_delAckEvent.Cancel ();
@@ -2794,7 +2792,6 @@ NS_LOG_UNCOND("dalayed ACK");
         }
       else if (m_delAckEvent.IsExpired ())
         {
-NS_LOG_UNCOND("schedule delayed ACK");
           m_delAckEvent = Simulator::Schedule (m_delAckTimeout,
                                                &TcpSocketBase::DelAckTimeout, this);
           NS_LOG_LOGIC (this << " scheduled delayed ACK at " <<
