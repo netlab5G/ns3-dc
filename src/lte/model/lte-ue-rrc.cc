@@ -34,6 +34,8 @@
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-radio-bearer-info.h>
 
+#include <ns3/lte-enb-rrc.h> // woody
+
 #include <cmath>
 
 namespace ns3 {
@@ -1135,6 +1137,20 @@ LteUeRrc::SetLteRlcSapUserDc (uint8_t i, LteRlcSapUser* p){ // woody3C
   m_bid2RlcSapUserMapDc[i] = p;
 }
 
+void
+LteUeRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc){ // woody
+  NS_LOG_FUNCTION (this);
+  m_assistInfoSink = enbRrc;
+}
+
+void
+LteUeRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
+  NS_LOG_FUNCTION (this);
+  static const Time delay = MilliSeconds (0);
+  NS_ASSERT_MSG (m_assistInfoSink != 0, "Cannot find assist info sink");
+  Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSink, assistInfo);
+}
+
 void 
 LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedicated rrcd)
 {
@@ -1275,6 +1291,15 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
               pdcp->SetLtePdcpSapUser (m_drbPdcpSapUser);
               pdcp->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ());
 
+              // woody
+//NS_LOG_UNCOND(" Set signaling in UE: bearerId " << (uint32_t) dtamIt->drbIdentity  << " this " << this <<  " &m_assistInfo " << &m_assistInfo << " m_assistInfoSink " << m_assistInfoSink);
+              m_assistInfo.bearerId = dtamIt->drbIdentity;
+              m_assistInfo.is_enb = false;
+
+              pdcp->m_ueRrc = this;
+              pdcp->SetAssistInfoPtr(&m_assistInfo);
+              rlc->SetRrc(0, this);
+              rlc->SetAssistInfoPtr(&m_assistInfo);
 
 	      std::map<uint8_t, LteRlcSapUser*>::iterator itRlc = m_bid2RlcSapUserMapDc.find (drbInfo->m_drbIdentity);
               if (itRlc == m_bid2RlcSapUserMapDc.end()){

@@ -323,6 +323,12 @@ public:
 
   void SetDcCell (uint16_t dcCell); // woody3C
 
+  LteRrcSap::AssistInfo m_assistInfo; // woody
+
+  void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+
+  int SplitAlgorithm (); // woody
+
 private:
 
   uint16_t m_dcCell; // woody3C
@@ -547,6 +553,12 @@ protected:
 public:
   static TypeId GetTypeId (void);
 
+  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc); // woody
+  Ptr<LteEnbRrc> GetAssistInfoSink (); // woody
+  void IsAssistInfoSink (); // woody
+
+  void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+  void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
 
   /**
    * Set the X2 SAP this RRC should interact with
@@ -875,7 +887,8 @@ public:
      LteRrcSap::MeasurementReport report);
   
 private:
-
+  Ptr<LteEnbRrc> m_assistInfoSink; // woody
+  bool m_isAssistInfoSink; // woody
 
   // RRC SAP methods
 

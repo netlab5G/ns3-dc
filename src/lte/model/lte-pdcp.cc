@@ -86,7 +86,7 @@ LtePdcp::LtePdcp ()
 Reordering_PDCP_RX_COUNT =0;
 k=0;
 check =false;
-isEnbPdcp =0;
+  m_isEnbPdcp =false; // woody
 }
 LtePdcp::~LtePdcp ()
 {
@@ -223,7 +223,7 @@ LtePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
 void
 LtePdcp::IsEnbPdcp () // woody3C
 {
-  isEnbPdcp = 1;
+  m_isEnbPdcp = true;
 }
 
 void
@@ -264,7 +264,7 @@ void
 LtePdcp::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
-  if ( isEnbPdcp == 1){
+  if (m_isEnbPdcp == 1){
     PdcpTag pdcpTag;
     Time delay;
 
@@ -292,6 +292,11 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
     params.pdcpSdu = p;
     params.rnti = m_rnti;
     params.lcid = m_lcid;
+
+    CheckingArrivalOfSN[m_rxSequenceNumber]= Simulator::Now();
+    PropagationDelaybySN[m_rxSequenceNumber] = delay;
+    PdcpDelayCalculater(m_rxSequenceNumber);
+
     m_pdcpSapUser->ReceivePdcpSdu(params);
 
   }
@@ -340,6 +345,9 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){ // sjkang
   PacketInBuffer.params =params;
   receivedPDCP_SN =PacketInBuffer.sequenceNumber;
 
+  CheckingArrivalOfSN[pdcpHeader.GetSequenceNumber()]= Simulator::Now();
+  PropagationDelaybySN[pdcpHeader.GetSequenceNumber()] = delay;
+
   printData("RX_SN", PacketInBuffer.sequenceNumber);
 
   // for checking whether there is the same PDCP SDU in buffer
@@ -382,11 +390,11 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){ // sjkang
   }
   else if (receivedPDCP_SN < Next_PDCP_RX_SN) { }
 
-//NS_LOG_UNCOND("RecevedPDCP_SN " << receivedPDCP_SN << " Last_Submitted_PDCP_RX_SN " << Last_Submitted_PDCP_RX_SN);
   if ((receivedPDCP_SN==Last_Submitted_PDCP_RX_SN-m_maxPdcpSn))
   {
-//NS_LOG_UNCOND("Submit " << receivedPDCP_SN << " after " << Last_Submitted_PDCP_RX_SN << " at point1");
+    PdcpDelayCalculater(receivedPDCP_SN); 
     m_pdcpSapUser->ReceivePdcpSdu(PdcpBuffer[receivedPDCP_SN]);
+
     Last_Submitted_PDCP_RX_SN = receivedPDCP_SN;
     PdcpBuffer.erase(receivedPDCP_SN);
   }
@@ -395,18 +403,15 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){ // sjkang
     uint16_t nextPDCP_SN;
     while(PdcpBuffer.size() > 0)
     {
-//NS_LOG_UNCOND("\t new loop start");
       nextPDCP_SN = (Last_Submitted_PDCP_RX_SN + 1)%4096;
       std::map<uint16_t, LtePdcpSapUser::ReceivePdcpSduParameters>::iterator it;
 
       for (it = PdcpBuffer.begin(); it->first != nextPDCP_SN && it != PdcpBuffer.end(); it++)
-      {
-//NS_LOG_UNCOND("\t" << it->first << " nextPDCP_SN " << nextPDCP_SN << " PdcpBuffer.end()->first " << PdcpBuffer.end()->first);
-      }
+      { }
 
       if (it == PdcpBuffer.end()) break;
 
-//NS_LOG_UNCOND("Submit " << nextPDCP_SN << " after " << Last_Submitted_PDCP_RX_SN << " when Rx " << receivedPDCP_SN);
+      PdcpDelayCalculater(nextPDCP_SN); 
       m_pdcpSapUser->ReceivePdcpSdu(PdcpBuffer[nextPDCP_SN]);
 
       printData("Reordered_SN", nextPDCP_SN);
@@ -457,7 +462,9 @@ LtePdcp::t_ReordringTimer_Expired(){ // sjkang
   {
     if (temp[c] <= Reordering_PDCP_RX_COUNT )
     {
+      PdcpDelayCalculater(temp[c]); 
       m_pdcpSapUser->ReceivePdcpSdu(PdcpBuffer[temp[c]]);
+
       Last_Submitted_PDCP_RX_SN =temp[c];
       printData("Reordered_SN", temp[c]);
       PdcpBuffer.erase(temp[c]);
@@ -483,7 +490,9 @@ LtePdcp::t_ReordringTimer_Expired(){ // sjkang
 
   for (uint16_t c = 0 ; c< p; c++)
   {
+    PdcpDelayCalculater(temp[c]); 
      m_pdcpSapUser->ReceivePdcpSdu(PdcpBuffer[temp[c]]);
+
      printData("Reordered_SN", temp[c]);
      PdcpBuffer.erase(temp[c]);
      Last_Submitted_PDCP_RX_SN = temp[c];
@@ -498,6 +507,36 @@ LtePdcp::t_ReordringTimer_Expired(){ // sjkang
   }
 }
 
+std::ofstream OutFile0("pdcp_delay_measure.txt");
+
+// the function for getting total delay (= pdcp propagation dealy + pdcp reordering delay)
+Time
+LtePdcp::PdcpDelayCalculater(uint16_t SN){
+  NS_LOG_FUNCTION (this);
+  PdcpDelay = Simulator::Now() - CheckingArrivalOfSN[SN]+PropagationDelaybySN[SN];
+  CheckingArrivalOfSN.erase(SN);
+  PropagationDelaybySN.erase(SN);
+  if (!OutFile0.is_open ())
+  {
+    OutFile0.open ("PdcpDelay_Measure.txt");
+  }
+  OutFile0<< "SequenceNumber" << "\t" << SN <<"\t"<<"Delay" << "\t" << PdcpDelay.GetSeconds()<< "\t" << std::endl;
+
+  // woody
+  m_assistInfoPtr->pdcp_sn = SN;
+  m_assistInfoPtr->pdcp_delay = PdcpDelay.GetSeconds();
+  if (m_isEnbPdcp)
+  {
+    m_enbRrc->SendAssistInfo (*m_assistInfoPtr);
+  }
+  else
+  {
+    m_ueRrc->SendAssistInfo (*m_assistInfoPtr);
+  }
+
+  return PdcpDelay;
+}
+
 std::ofstream OutFile1("pdcp_1_RX_SN.txt");
 std::ofstream OutFile2("pdcp_1_Reordered_SN.txt");
 std::ofstream OutFile3("pdcp_1_RX_SN.txt");
@@ -510,6 +549,7 @@ Ptr <ns3::LtePdcp> tempAddress1;
 void
 LtePdcp::printData(string filename, uint16_t SN) // sjkang
 {
+  NS_LOG_FUNCTION (this);
   if (count ==0){ tempAddress1 =this;count ++;}
   count ++;
 
@@ -551,6 +591,12 @@ LtePdcp::printData(string filename, uint16_t SN) // sjkang
       OutFile4<<this<< "\t"<< Simulator::Now ().GetSeconds() << "\t"<< "Reordered SN " << "\t" << SN<< std::endl;
     }
   }
+}
+
+void
+LtePdcp::SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr){ // woody
+  NS_LOG_FUNCTION (this);
+  m_assistInfoPtr = assistInfoPtr;
 }
 
 } // namespace ns3

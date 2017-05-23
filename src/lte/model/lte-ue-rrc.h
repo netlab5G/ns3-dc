@@ -30,6 +30,7 @@
 #include <ns3/lte-ue-cphy-sap.h>
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/traced-callback.h>
+#include <ns3/lte-enb-rrc.h> // woody
 
 #include <map>
 #include <set>
@@ -293,6 +294,9 @@ public:
 
   void SetRrcDc (Ptr<LteUeRrc> rrcDc); // woody3C
   void SetLteRlcSapUserDc (uint8_t drbIdentity, LteRlcSapUser* p); // woody3C
+  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc); // woody
+  void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+  LteRrcSap::AssistInfo m_assistInfo; // woody
 
 private:
 
@@ -300,6 +304,8 @@ private:
   LteRlcSapUser* m_rlcSapUserDc; // woodddy3C
 
   std::map<uint8_t, LteRlcSapUser*> m_bid2RlcSapUserMapDc; // woody3C
+
+  Ptr<LteEnbRrc> m_assistInfoSink; // woody
 
   // PDCP SAP methods
   void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);

@@ -203,7 +203,7 @@ main (int argc, char *argv[])
 {
   double simTime = 15.0;
   double startTime =1.0;
-  int log_packetflow = 1;
+  int log_packetflow = 0;
   uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
   uint16_t pdcpReorderingTimer = 10;
   std::string outputName;
@@ -335,6 +335,8 @@ main (int argc, char *argv[])
   NetDeviceContainer ueLteDevs = lteHelper->InstallDcUeDevice (ueNodes); // woody
 
   lteHelper->NotifyEnbNeighbor (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
+
+  lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0)); // woody, for splitting algm.
 
   // Install the IP stack on the UEs
   NS_LOG_UNCOND("# install the IP stack on the UEs");

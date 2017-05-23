@@ -390,7 +390,18 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
       pdcp->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ());
       rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
       drbInfo->m_pdcp = pdcp;
+
+      // woody
+//NS_LOG_UNCOND(" Set signaling in eNB: bearerId " << (unsigned)bearerId << " m_rrc " << m_rrc <<  " &m_assistInfo " << &m_assistInfo << " m_rrc->m_assistInfoSink " << m_rrc->GetAssistInfoSink());
+      m_assistInfo.bearerId = bearerId;
+      m_assistInfo.is_enb = true;
+
       pdcp->IsEnbPdcp(); // woody3C
+      pdcp->m_enbRrc = m_rrc;
+      pdcp->SetAssistInfoPtr(&m_assistInfo);
+      rlc->IsEnbRlc();
+      rlc->SetRrc(m_rrc, 0);
+      rlc->SetAssistInfoPtr(&m_assistInfo);
     }
 
   LteEnbCmacSapProvider::LcInfo lcinfo;
@@ -671,7 +682,58 @@ UeManager::SendData3C (uint8_t bid, Ptr<Packet> p) // woody3C
   rlcSapProvider->TransmitPdcpPdu (params);
 }
 
-int t_splitter = 0; // woody3C, for debugging
+LteRrcSap::AssistInfo info[3];
+
+void
+UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
+{
+  NS_LOG_FUNCTION (this);
+
+  int nodeNum;
+  if (assistInfo.is_enb && m_rrc->m_isAssistInfoSink) nodeNum = 0;
+  else if (assistInfo.is_enb) nodeNum = 1;
+  else nodeNum = 2;
+
+//NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pdcp_delay " << assistInfo.pdcp_delay << " rlc_avg_buffer " << assistInfo.rlc_avg_buffer << " rlc_tx_queue " << assistInfo.rlc_tx_queue << " rlc_retx_queue " << assistInfo.rlc_retx_queue << " rlc_tx_queue_hol_delay " << assistInfo.rlc_tx_queue_hol_delay << " rlc_retx_queue_hol_delay " << assistInfo.rlc_retx_queue_hol_delay );
+  info[nodeNum] = assistInfo;
+
+  return;
+}
+
+
+/*
+ 0: MeNB only
+ 1: SeNB only
+ 2: alternative splitting
+
+*/
+int m_splitAlgorithm = 0;
+
+int m_lastDirection;
+
+int
+UeManager::SplitAlgorithm ()
+{
+  NS_LOG_FUNCTION (this);
+
+  // return 1 for Tx through MeNB &  return 2 for Tx through SeNB
+  switch (m_splitAlgorithm)
+  {
+    case 0:
+      return 0;
+      break;
+
+    case 1:
+      return 1;
+      break;
+
+    case 2:
+      if (m_lastDirection == 0) return 1;
+      else return 0;
+      break;
+  }
+  return -1;
+}
 
 void
 UeManager::SendData (uint8_t bid, Ptr<Packet> p)
@@ -710,17 +772,19 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
           pdcpSapProvider->TransmitPdcpSdu (params);
         }
         else if (bearerInfo->m_dcType == 2){
+          int t_splitter = SplitAlgorithm();
 	  if (t_splitter == 1){
             NS_LOG_INFO("***MeNB forward packet toward SeNB");
-            t_splitter = 0;
+            m_lastDirection = 1;
             m_currentBid = bid;
             pdcpSapProvider->TransmitPdcpSduDc (params);
           }
-          else {
+          else if (t_splitter == 0) {
             NS_LOG_INFO("***MeNB transmits packet directly");
-            t_splitter = 1;
+            m_lastDirection = 0;
             pdcpSapProvider->TransmitPdcpSdu (params);
           }
+          else NS_FATAL_ERROR ("unknwon t_splitter value");
         }
       }
           }
@@ -1427,6 +1491,7 @@ LteEnbRrc::LteEnbRrc ()
   m_x2SapUser = new EpcX2SpecificEpcX2SapUser<LteEnbRrc> (this);
   m_s1SapUser = new MemberEpcEnbS1SapUser<LteEnbRrc> (this);
   m_cphySapUser = new MemberLteEnbCphySapUser<LteEnbRrc> (this);
+  m_isAssistInfoSink = false; // woody
 }
 
 
@@ -2631,6 +2696,50 @@ void
 LteEnbRrc::SetDcCell (uint16_t dcCell){ // woody3C
   NS_LOG_FUNCTION (this);
   m_dcCell = dcCell;
+}
+
+void
+LteEnbRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc){ // woody
+  NS_LOG_FUNCTION (this);
+  m_assistInfoSink = enbRrc;
+}
+
+Ptr<LteEnbRrc>
+LteEnbRrc::GetAssistInfoSink (){ // woody
+  NS_LOG_FUNCTION (this);
+  return m_assistInfoSink;
+}
+
+void
+LteEnbRrc::IsAssistInfoSink (){ // woody
+  NS_LOG_FUNCTION (this);
+  m_isAssistInfoSink = true;
+}
+
+void
+LteEnbRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){
+  NS_LOG_FUNCTION (this);
+  static const Time delay = MilliSeconds (0);
+  NS_ASSERT_MSG (m_assistInfoSink != 0, "Cannot find assist info sink");
+  Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSink, assistInfo);
+}
+
+void
+LteEnbRrc::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT_MSG (m_isAssistInfoSink == true, "Not a assist info sink");
+
+  std::map <uint32_t, X2uTeidInfo >::iterator itX2uTeidInfo;
+  for (itX2uTeidInfo = m_x2uTeidInfoMapDc.begin (); itX2uTeidInfo != m_x2uTeidInfoMapDc.end (); itX2uTeidInfo++)
+  {
+    if (itX2uTeidInfo->second.drbid == assistInfo.bearerId) break;
+  }
+  NS_ASSERT_MSG (itX2uTeidInfo != m_x2uTeidInfoMapDc.end (), "Cannot find matching bearer");
+
+  std::map<uint16_t, Ptr<UeManager> >::iterator itUeManager = m_ueMap.find (itX2uTeidInfo->second.rnti);
+  NS_ASSERT_MSG (itUeManager != m_ueMap.end (), "Cannot find matching UE Manager");
+
+  itUeManager->second->RecvAssistInfo (assistInfo);
 }
 
 } // namespace ns3

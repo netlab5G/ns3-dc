@@ -451,6 +451,27 @@ LteHelper::NotifyEnbNeighbor (Ptr<Node> enb, Ptr<Node> senb) // woody3C
   m_epcHelper->GetMme()->SetMenbSenbMap(enbDev->GetCellId(), senbDev->GetCellId());
 }
 
+void
+LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue) // woody
+{
+  NS_LOG_FUNCTION (this);
+  Ptr<LteEnbNetDevice> enbDev = enb->GetDevice(0)->GetObject<LteEnbNetDevice> ();;
+  Ptr<LteEnbNetDevice> senbDev = senb->GetDevice(0)->GetObject<LteEnbNetDevice> ();;
+  Ptr<LteUeNetDevice> ueDev = ue->GetDevice(0)->GetObject<LteUeNetDevice> ();;
+
+  Ptr<LteEnbRrc> enbRrc = enbDev->GetRrc();
+  Ptr<LteEnbRrc> senbRrc = senbDev->GetRrc();
+  Ptr<LteUeRrc> ueRrc = ueDev->GetRrc();
+  Ptr<LteUeRrc> ueRrcDc = ueDev->GetRrcDc();
+
+  enbRrc->SetAssistInfoSink (enbRrc);
+  senbRrc->SetAssistInfoSink (enbRrc);
+  ueRrc->SetAssistInfoSink (enbRrc);
+  ueRrcDc->SetAssistInfoSink (enbRrc);
+
+  enbRrc->IsAssistInfoSink ();
+}
+
 Ptr<NetDevice>
 LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
 {

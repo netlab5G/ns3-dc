@@ -58,6 +58,20 @@ class LteRrcSap
 public:
   virtual ~LteRrcSap ();
 
+  struct AssistInfo // woody
+  {
+    uint8_t bearerId;
+    bool is_enb;
+
+    uint16_t pdcp_sn;
+    uint16_t pdcp_delay;
+    double rlc_avg_buffer;
+    uint32_t rlc_tx_queue;
+    uint32_t rlc_retx_queue;
+    double rlc_tx_queue_hol_delay;
+    double rlc_retx_queue_hol_delay;
+  };
+
   // Constraint values
 
   static const uint8_t MaxReportCells = 255;

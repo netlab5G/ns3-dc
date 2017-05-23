@@ -29,6 +29,9 @@
 #include "ns3/lte-pdcp-sap.h"
 #include "ns3/lte-rlc-sap.h"
 
+#include "ns3/lte-rrc-sap.h" // woody
+#include "ns3/lte-enb-rrc.h" // woody
+#include "ns3/lte-ue-rrc.h" // woody
 
 namespace ns3 {
 
@@ -44,7 +47,6 @@ public:
   virtual ~LtePdcp ();
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
-  void IsEnbPdcp (void);
   /**
    *
    *
@@ -142,6 +144,15 @@ public:
   void BufferingAndReordering(Ptr<Packet> p);
   void printData(std::string filename, uint16_t SN);
   void t_ReordringTimer_Expired();
+
+  Time PdcpDelayCalculater(uint16_t SN); // sjkang
+
+  // woody
+  void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
+  void IsEnbPdcp (void);
+  Ptr<LteEnbRrc> m_enbRrc;
+  Ptr<LteUeRrc> m_ueRrc;
+
 protected:
   // Interface provided to upper RRC entity
   virtual void DoTransmitPdcpSdu (Ptr<Packet> p);
@@ -159,13 +170,19 @@ protected:
   uint16_t m_rnti;
   uint8_t m_lcid;
   int k;
-   //sjkang
-   int receivedPDCP_SN;
-   int Reordering_PDCP_RX_COUNT;
-   int Next_PDCP_RX_SN;
 
- std::map <uint16_t,LtePdcpSapUser::ReceivePdcpSduParameters> PdcpBuffer;
- EventId t_ReorderingTimer;
+  //sjkang
+  int receivedPDCP_SN;
+  int Reordering_PDCP_RX_COUNT;
+  int Next_PDCP_RX_SN;
+  std::map <uint16_t,LtePdcpSapUser::ReceivePdcpSduParameters> PdcpBuffer;
+  EventId t_ReorderingTimer;
+
+  // sjkang, for measuring delay
+  std::map<uint16_t, Time>  CheckingArrivalOfSN, PropagationDelaybySN;
+  Time PdcpDelay;
+  Time delay;
+
   /**
    * Used to inform of a PDU delivery to the RLC SAP provider.
    * The parameters are RNTI, LCID and bytes delivered
@@ -194,7 +211,10 @@ private:
   Time  expiredTime;
    // bool CheckReodering_PDCP_RX_COUNT_1;
     int randomSequence[10000] ;
-    uint16_t isEnbPdcp;
+
+  // woody
+  bool m_isEnbPdcp;
+  LteRrcSap::AssistInfo *m_assistInfoPtr;
 };
 
 

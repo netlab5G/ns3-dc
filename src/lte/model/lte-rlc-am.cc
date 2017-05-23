@@ -29,6 +29,11 @@
 #include "ns3/ipv4-queue-disc-item.h"
 #include "ns3/ipv4-packet-filter.h"
 
+#include <fstream>
+
+#include "ns3/lte-enb-rrc.h" // woody
+#include "ns3/lte-ue-rrc.h" // woody
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteRlcAm");
@@ -83,6 +88,13 @@ LteRlcAm::LteRlcAm ()
   m_txonQueue = CreateObject<CoDelQueueDisc> ();
   m_txonQueue->Initialize ();
 
+  // sjkang
+  count=0;
+  averageBufferSize=0;
+  p=0;
+  sum=0;
+
+  m_isEnbRlc = false; // woody
 }
 
 LteRlcAm::~LteRlcAm ()
@@ -223,6 +235,9 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 	item = Create<Ipv4QueueDiscItem> (p, dest, 0, ipv4Header);
 	m_txonQueue->Enqueue (item);
   }
+
+  GetBufferSize(); // sjkang
+
   /** Report Buffer Status */
   DoReportBufferStatus ();
   m_rbsTimer.Cancel ();
@@ -1934,6 +1949,8 @@ LteRlcAm::DoReportBufferStatus (void)
   r.retxQueueSize = m_retxBufferSize;// + m_txedBufferSize;
   r.retxQueueHolDelay = retxQueueHolDelay.GetMilliSeconds ();
 
+  GetReportBufferStatus(r); // sjkang
+
   if ( m_statusPduRequested && ! m_statusProhibitTimer.IsRunning () )
     {
       r.statusPduSize = m_statusPduBufferSize;
@@ -2108,6 +2125,142 @@ LteRlcAm::ExpireRbsTimer (void)
       DoReportBufferStatus ();
       m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
     }
+}
+
+
+// sjkang, the implementation for extracting parameters
+
+std::ofstream OutFile5("enb1_BuffersizefromSampling.txt");
+std::ofstream OutFile6("ue_BuffersizefromSampling.txt");
+std::ofstream OutFile7("enb2_BuffersizefromSampling.txt");
+
+std::ofstream OutFile8("enb1_BuffersizeAndDelay.txt");
+std::ofstream OutFile9("ue_BuffersizeAndDelay.txt");
+std::ofstream OutFile10("enb2_BuffersizeAndDelay.txt");
+
+// declaration for distinguishing the addresses (UE, Menb, Senb)
+Ptr <ns3::LteRlcAm> enb1_Address,ue_Address,enb2_Address;
+
+// the function for getting moving average value of total buffer size( transmission + retransmission)
+double
+LteRlcAm::GetBufferSize(){
+  NS_LOG_FUNCTION(this);
+  Time delta_t=MilliSeconds(1.0);
+
+  //for finding each address
+  if (count ==0)
+  {
+    SamplingTime=Simulator ::Now();
+    count =1;
+    enb1_Address=this;
+  }
+
+  if(count==1 && enb1_Address != this)
+  {
+    ue_Address= this;
+    count=2;
+  }
+
+  if((count==2 || count==1) && enb1_Address!=this && ue_Address!=this)
+  {
+    enb2_Address= this;
+  }
+
+  //extracting the sample value per 1ms
+  if (Simulator::Now() >= SamplingTime +delta_t)
+  {
+    SamplingTime =Simulator::Now();
+
+    // the procedure untill moving window buffer is full
+    if (p <= 9)
+    {
+      ArrayInMovingWindow[p] =m_txonBufferSize +m_retxBufferSize+m_txedBufferSize;
+      sum += ArrayInMovingWindow[p];
+      averageBufferSize = sum/10.0;
+    }
+    //if the number of samples is equal to 10 , then get moving average value
+    else if (p >9)
+    {
+      // discard the last value in moving window buffer
+      int t= ArrayInMovingWindow[0];
+      //moving window
+      for (int j=1; j<10;j++){ ArrayInMovingWindow[j-1]=ArrayInMovingWindow[j];}
+      // update the new value and add to moving window buffer
+      ArrayInMovingWindow[9] = m_txonBufferSize + m_retxBufferSize +m_txedBufferSize;
+      //previous sum is updated for getting new moving average value
+      sum = sum-t+ArrayInMovingWindow[9];
+
+      averageBufferSize =(double)sum/10.0;
+
+      if (enb1_Address ==this) OutFile5<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      else if(ue_Address==this) OutFile6<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      else if (enb2_Address == this) OutFile7<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+
+      // woody
+      m_assistInfoPtr->rlc_avg_buffer = averageBufferSize;
+      if (m_assistInfoPtr){
+        if (m_isEnbRlc){
+          m_enbRrc->SendAssistInfo (*m_assistInfoPtr);
+        }
+        else{
+          m_ueRrc->SendAssistInfo (*m_assistInfoPtr);
+        }
+      }
+    }
+    p++;
+  }
+  return averageBufferSize;
+}
+
+/// the function for taking the information from the DoReportBufferStatus
+int cc=0;
+
+void
+LteRlcAm::GetReportBufferStatus(LteMacSapProvider::ReportBufferStatusParameters r){
+  NS_LOG_FUNCTION(this);
+  if (cc==0)
+  {
+    OutFile6<<"Rlc Transmission Queue" << "\t"<< "Rlc retransmission Queue" << "\t"  <<"the Head Of Line delay of the transmission queue"<<"\t"<<" the Head Of Line delay of the retransmission queue"<<std::endl;
+    cc=1;
+  }
+
+  if (enb1_Address ==this) OutFile8<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if(ue_Address==this) OutFile9<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if (enb2_Address == this) OutFile10<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<<(double)r.retxQueueHolDelay/1000.0 << std::endl;
+
+  // woody
+  m_assistInfoPtr->rlc_tx_queue = r.txQueueSize;
+  m_assistInfoPtr->rlc_retx_queue = r.retxQueueSize;
+  m_assistInfoPtr->rlc_tx_queue_hol_delay = (double)r.txQueueHolDelay/1000.0;
+  m_assistInfoPtr->rlc_retx_queue_hol_delay = (double)r.retxQueueHolDelay/1000.0;
+  if (m_assistInfoPtr){
+    if (m_isEnbRlc){
+      m_enbRrc->SendAssistInfo (*m_assistInfoPtr);
+    }
+    else{
+      m_ueRrc->SendAssistInfo (*m_assistInfoPtr);
+    }
+  }
+}
+
+void
+LteRlcAm::IsEnbRlc () // woody
+{
+  m_isEnbRlc = true;
+}
+
+void
+LteRlcAm::SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr){
+  NS_LOG_FUNCTION (this);
+  m_assistInfoPtr = assistInfoPtr;
+}
+
+void
+LteRlcAm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
+{
+  NS_LOG_FUNCTION(this);
+  m_enbRrc = enbRrc;
+  m_ueRrc = ueRrc;
 }
 
 } // namespace ns3

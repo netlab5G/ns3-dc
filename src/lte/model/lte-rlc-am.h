@@ -26,6 +26,10 @@
 #include <ns3/lte-rlc.h>
 #include "ns3/codel-queue-disc.h"
 
+#include "ns3/lte-rrc-sap.h" // woody
+#include "ns3/lte-enb-rrc.h" // woody
+#include "ns3/lte-ue-rrc.h" // woody
+
 #include <vector>
 #include <map>
 
@@ -56,7 +60,27 @@ public:
   virtual void DoNotifyUlHarqDeliveryFailure (uint8_t harqId);
   virtual void DoReceivePdu (Ptr<Packet> p);
 
+  // sjkang
+  virtual double GetBufferSize();
+  void GetReportBufferStatus( LteMacSapProvider::ReportBufferStatusParameters r);
+  int count=0, sum;
+  int p;
+  double averageBufferSize;
+  Time SamplingTime;
+  uint32_t ArrayInMovingWindow[11];
+
+  // woody
+  virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
+  virtual void IsEnbRlc (void);
+  virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc);
+
 private:
+  // woody
+  LteRrcSap::AssistInfo *m_assistInfoPtr;
+  bool m_isEnbRlc;
+  Ptr<LteEnbRrc> m_enbRrc;
+  Ptr<LteUeRrc> m_ueRrc;
+
   /**
    * This method will schedule a timeout at WaitReplyTimeout interval
    * in the future, unless a timer is already running for the cache,

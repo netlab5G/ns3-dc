@@ -1,1 +1,0 @@
-simTime	30	throughput	64.2084	RTT	0.116332

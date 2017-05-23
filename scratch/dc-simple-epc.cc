@@ -166,6 +166,8 @@ main (int argc, char *argv[])
 
   lteHelper->NotifyEnbNeighbor (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
 
+  lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0)); // woody, for splitting algm.
+
   // Install the IP stack on the UEs
   NS_LOG_UNCOND("# install the IP stack on the UEs");
   internet.Install (ueNodes);

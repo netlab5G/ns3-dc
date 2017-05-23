@@ -291,6 +291,8 @@ public:
 
   void NotifyEnbNeighbor (Ptr<Node> enb, Ptr<Node> senb); // woody3C
 
+  void ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue); // woody
+
   /**
    * Create a set of UE devices.
    *
