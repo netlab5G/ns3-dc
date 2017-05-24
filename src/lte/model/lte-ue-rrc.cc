@@ -34,8 +34,6 @@
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-radio-bearer-info.h>
 
-#include <ns3/lte-enb-rrc.h> // woody
-
 #include <cmath>
 
 namespace ns3 {
@@ -1138,17 +1136,26 @@ LteUeRrc::SetLteRlcSapUserDc (uint8_t i, LteRlcSapUser* p){ // woody3C
 }
 
 void
-LteUeRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc){ // woody
+LteUeRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType){ // woody
   NS_LOG_FUNCTION (this);
-  m_assistInfoSink = enbRrc;
+
+  if (dcType == 2){
+    m_assistInfoSinkEnb = enbRrc;
+  }
+  else if (dcType == 3){
+    m_assistInfoSinkPgw = pgwApp;
+  }
+  else NS_FATAL_ERROR ("Unimplemented DC type");
 }
 
 void
 LteUeRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
   static const Time delay = MilliSeconds (0);
-  NS_ASSERT_MSG (m_assistInfoSink != 0, "Cannot find assist info sink");
-  Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSink, assistInfo);
+  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
+
+  if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
+  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);
 }
 
 void 

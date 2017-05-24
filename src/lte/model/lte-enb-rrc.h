@@ -40,6 +40,7 @@
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/lte-anr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
+#include <ns3/epc-sgw-pgw-application.h> // woody
 
 #include <map>
 #include <set>
@@ -553,8 +554,9 @@ protected:
 public:
   static TypeId GetTypeId (void);
 
-  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc); // woody
-  Ptr<LteEnbRrc> GetAssistInfoSink (); // woody
+  void SetMenb (); // woody
+
+  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType); // woody
   void IsAssistInfoSink (); // woody
 
   void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
@@ -887,7 +889,12 @@ public:
      LteRrcSap::MeasurementReport report);
   
 private:
-  Ptr<LteEnbRrc> m_assistInfoSink; // woody
+
+  bool m_isMenb; // woody
+
+  Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
+  Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
+
   bool m_isAssistInfoSink; // woody
 
   // RRC SAP methods

@@ -43,7 +43,6 @@
 
 
 
-
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteEnbRrc");
@@ -392,7 +391,6 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
       drbInfo->m_pdcp = pdcp;
 
       // woody
-//NS_LOG_UNCOND(" Set signaling in eNB: bearerId " << (unsigned)bearerId << " m_rrc " << m_rrc <<  " &m_assistInfo " << &m_assistInfo << " m_rrc->m_assistInfoSink " << m_rrc->GetAssistInfoSink());
       m_assistInfo.bearerId = bearerId;
       m_assistInfo.is_enb = true;
 
@@ -690,7 +688,7 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
   NS_LOG_FUNCTION (this);
 
   int nodeNum;
-  if (assistInfo.is_enb && m_rrc->m_isAssistInfoSink) nodeNum = 0;
+  if (assistInfo.is_enb && assistInfo.is_menb) nodeNum = 0;
   else if (assistInfo.is_enb) nodeNum = 1;
   else nodeNum = 2;
 
@@ -707,16 +705,16 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
  2: alternative splitting
 
 */
-int m_splitAlgorithm = 0;
+int m_splitAlgorithm = 2;
 
 int m_lastDirection;
 
 int
-UeManager::SplitAlgorithm ()
+UeManager::SplitAlgorithm () // woody
 {
   NS_LOG_FUNCTION (this);
 
-  // return 1 for Tx through MeNB &  return 2 for Tx through SeNB
+  // return 0 for Tx through MeNB &  return 1 for Tx through SeNB
   switch (m_splitAlgorithm)
   {
     case 0:
@@ -768,19 +766,19 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
             if (bearerInfo != NULL)
               {
                 LtePdcpSapProvider* pdcpSapProvider = bearerInfo->m_pdcp->GetLtePdcpSapProvider ();
-        if (bearerInfo->m_dcType == 0 || bearerInfo->m_dcType == 1){ // woody3C
+        if (bearerInfo->m_dcType == 0 || bearerInfo->m_dcType == 1 || bearerInfo->m_dcType == 3){ // woody3C, woody1X
           pdcpSapProvider->TransmitPdcpSdu (params);
         }
         else if (bearerInfo->m_dcType == 2){
           int t_splitter = SplitAlgorithm();
 	  if (t_splitter == 1){
-            NS_LOG_INFO("***MeNB forward packet toward SeNB");
+            NS_LOG_INFO("**MeNB forward packet toward SeNB");
             m_lastDirection = 1;
             m_currentBid = bid;
             pdcpSapProvider->TransmitPdcpSduDc (params);
           }
           else if (t_splitter == 0) {
-            NS_LOG_INFO("***MeNB transmits packet directly");
+            NS_LOG_INFO("**MeNB transmits packet directly");
             m_lastDirection = 0;
             pdcpSapProvider->TransmitPdcpSdu (params);
           }
@@ -2699,15 +2697,21 @@ LteEnbRrc::SetDcCell (uint16_t dcCell){ // woody3C
 }
 
 void
-LteEnbRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc){ // woody
+LteEnbRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType){ // woody
   NS_LOG_FUNCTION (this);
-  m_assistInfoSink = enbRrc;
+
+  if (dcType == 2){
+    m_assistInfoSinkEnb = enbRrc;
+  }
+  else if (dcType == 3){
+    m_assistInfoSinkPgw = pgwApp;
+  }
+  else NS_FATAL_ERROR ("Unimplemented DC type");
 }
 
-Ptr<LteEnbRrc>
-LteEnbRrc::GetAssistInfoSink (){ // woody
-  NS_LOG_FUNCTION (this);
-  return m_assistInfoSink;
+void
+LteEnbRrc::SetMenb (){ // woody
+  m_isMenb = true;
 }
 
 void
@@ -2717,15 +2721,19 @@ LteEnbRrc::IsAssistInfoSink (){ // woody
 }
 
 void
-LteEnbRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){
+LteEnbRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
   static const Time delay = MilliSeconds (0);
-  NS_ASSERT_MSG (m_assistInfoSink != 0, "Cannot find assist info sink");
-  Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSink, assistInfo);
+  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
+
+  if (m_isMenb) assistInfo.is_menb = true;
+
+  if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
+  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);
 }
 
 void
-LteEnbRrc::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){
+LteEnbRrc::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
   NS_ASSERT_MSG (m_isAssistInfoSink == true, "Not a assist info sink");
 

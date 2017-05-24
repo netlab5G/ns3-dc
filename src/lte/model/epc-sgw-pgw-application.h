@@ -37,6 +37,7 @@
 #include <ns3/epc-s1ap-sap.h>
 #include <ns3/epc-s11-sap.h>
 #include <map>
+#include <ns3/lte-rrc-sap.h> // woody
 
 namespace ns3 {
 
@@ -150,7 +151,13 @@ public:
    */
   void SetUeAddress (uint64_t imsi, Ipv4Address ueAddr);
 
+  void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+  int SplitAlgorithm (); // woody
+  void IsAssistInfoSink (); // woody
+
 private:
+
+  bool m_isAssistInfoSink; // woody
 
   // S11 SAP SGW methods
   void DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequestMessage msg);
@@ -158,7 +165,6 @@ private:
 
   void DoDeleteBearerCommand (EpcS11SapSgw::DeleteBearerCommandMessage req);
   void DoDeleteBearerResponse (EpcS11SapSgw::DeleteBearerResponseMessage req);
-
 
   /**
    * store info for each UE connected to this SGW
@@ -221,20 +227,21 @@ public:
     /**
      * \return the address of the SeNB to which the UE is connected
      */
-    Ipv4Address GetSenbAddr (); // sychoi, woody inserted
+    Ipv4Address GetSenbAddr (); // sychoi
 
     /**
      * set the address of the SeNB to which the UE is connected
      *
      * \param addr the address of the SeNB
      */
-    void SetSenbAddr (Ipv4Address addr); // sychoi, woody inserted
+    void SetSenbAddr (Ipv4Address addr); // sychoi
 
+    uint8_t dcType; // woody
 
   private:
     EpcTftClassifier m_tftClassifier;
     Ipv4Address m_enbAddr;
-    Ipv4Address m_senbAddr; // sychoi, woody inserted
+    Ipv4Address m_senbAddr; // sychoi
     Ipv4Address m_ueAddr;
     std::map<uint8_t, uint32_t> m_teidByBearerIdMap;
   };
@@ -266,13 +273,13 @@ public:
    * Map telling for each TEID the corresponding SeNB address
    * This map is implemented only for the dual connectivity.
    */
-  std::map<uint32_t, Ipv4Address> m_dcEnbAddrByTeidMap; // sychoi, woody inserted
+  std::map<uint32_t, Ipv4Address> m_dcEnbAddrByTeidMap; // sychoi
 
   /**
    * Map telling for each IMSI the corresponding TEID
    * This map is implemented only for the dual connectivity
    */
-  std::map<uint64_t, uint32_t> m_dcTeidByImsiMap; // sychoi, woody inserted
+  std::map<uint64_t, uint32_t> m_dcTeidByImsiMap; // sychoi
 
 
   /**

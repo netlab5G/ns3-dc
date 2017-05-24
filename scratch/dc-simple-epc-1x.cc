@@ -49,7 +49,7 @@ main (int argc, char *argv[])
   double interPacketInterval = 100;
   int log_packetflow = 1;
 
-  uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
+  uint8_t dcType = 3; // woody (0: Single Connection, 1: 1A, 2: 3C, 3:1X)
 
   // Command line arguments
   CommandLine cmd;

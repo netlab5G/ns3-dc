@@ -62,6 +62,7 @@ public:
   {
     uint8_t bearerId;
     bool is_enb;
+    bool is_menb;
 
     uint16_t pdcp_sn;
     uint16_t pdcp_delay;

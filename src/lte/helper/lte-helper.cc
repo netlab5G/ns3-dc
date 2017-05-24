@@ -452,24 +452,33 @@ LteHelper::NotifyEnbNeighbor (Ptr<Node> enb, Ptr<Node> senb) // woody3C
 }
 
 void
-LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue) // woody
+LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8_t dcType) // woody
 {
   NS_LOG_FUNCTION (this);
-  Ptr<LteEnbNetDevice> enbDev = enb->GetDevice(0)->GetObject<LteEnbNetDevice> ();;
-  Ptr<LteEnbNetDevice> senbDev = senb->GetDevice(0)->GetObject<LteEnbNetDevice> ();;
-  Ptr<LteUeNetDevice> ueDev = ue->GetDevice(0)->GetObject<LteUeNetDevice> ();;
+  Ptr<LteEnbNetDevice> enbDev = enb->GetDevice(0)->GetObject<LteEnbNetDevice> ();
+  Ptr<LteEnbNetDevice> senbDev = senb->GetDevice(0)->GetObject<LteEnbNetDevice> ();
+  Ptr<LteUeNetDevice> ueDev = ue->GetDevice(0)->GetObject<LteUeNetDevice> ();
 
   Ptr<LteEnbRrc> enbRrc = enbDev->GetRrc();
   Ptr<LteEnbRrc> senbRrc = senbDev->GetRrc();
   Ptr<LteUeRrc> ueRrc = ueDev->GetRrc();
   Ptr<LteUeRrc> ueRrcDc = ueDev->GetRrcDc();
 
-  enbRrc->SetAssistInfoSink (enbRrc);
-  senbRrc->SetAssistInfoSink (enbRrc);
-  ueRrc->SetAssistInfoSink (enbRrc);
-  ueRrcDc->SetAssistInfoSink (enbRrc);
+  Ptr<Node> pgwNode = m_epcHelper->GetPgwNode ();
+  Ptr<EpcSgwPgwApplication> pgwApp = pgwNode->GetApplication (0)->GetObject<EpcSgwPgwApplication> ();
 
-  enbRrc->IsAssistInfoSink ();
+  enbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  senbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  ueRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  ueRrcDc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+
+  if (dcType == 2){
+    enbRrc->IsAssistInfoSink (); 
+  }
+  else if (dcType == 3){
+    pgwApp->IsAssistInfoSink ();
+  }
+  else NS_FATAL_ERROR ("Unimplemented DC type");
 }
 
 Ptr<NetDevice>
@@ -522,6 +531,8 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
   Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
   Ptr<LteHandoverAlgorithm> handoverAlgorithm = m_handoverAlgorithmFactory.Create<LteHandoverAlgorithm> ();
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
+
+  rrc->SetMenb(); // woody
 
   if (m_useIdealRrc)
     {

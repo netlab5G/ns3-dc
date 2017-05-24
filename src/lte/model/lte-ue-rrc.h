@@ -294,7 +294,7 @@ public:
 
   void SetRrcDc (Ptr<LteUeRrc> rrcDc); // woody3C
   void SetLteRlcSapUserDc (uint8_t drbIdentity, LteRlcSapUser* p); // woody3C
-  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc); // woody
+  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType); // woody
   void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
   LteRrcSap::AssistInfo m_assistInfo; // woody
 
@@ -305,7 +305,8 @@ private:
 
   std::map<uint8_t, LteRlcSapUser*> m_bid2RlcSapUserMapDc; // woody3C
 
-  Ptr<LteEnbRrc> m_assistInfoSink; // woody
+  Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
+  Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
 
   // PDCP SAP methods
   void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);
