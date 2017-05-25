@@ -185,7 +185,11 @@ LteEnbNetDevice::DoDispose ()
   LteNetDevice::DoDispose ();
 }
 
-
+Ptr<FfMacScheduler>
+LteEnbNetDevice::GetFfMacScheduler () // woody
+{
+  return m_scheduler;
+}
 
 Ptr<LteEnbMac>
 LteEnbNetDevice::GetMac () const

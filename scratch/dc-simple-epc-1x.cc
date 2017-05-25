@@ -83,6 +83,7 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("LteEnbMac", LOG_DEBUG);
 //  LogComponentEnable ("LteRlcUm", LOG_LOGIC);
 //  LogComponentEnable ("EpcX2", LOG_FUNCTION);
+//  LogComponentEnable ("PfFfMacScheduler", LOG_FUNCTION);
  
   if (log_packetflow){
     LogComponentEnable ("LtePdcp", LOG_INFO);

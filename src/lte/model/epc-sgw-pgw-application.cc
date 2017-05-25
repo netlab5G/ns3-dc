@@ -174,7 +174,7 @@ EpcSgwPgwApplication::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // wood
  2: alternative splitting
 
 */
-int m_splitAlgorithm1X = 0;
+int m_splitAlgorithm1X = 2;
 
 int m_lastDirection1X;
 

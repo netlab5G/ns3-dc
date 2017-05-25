@@ -62,6 +62,7 @@
 #include <ns3/lte-spectrum-value-helper.h>
 #include <ns3/epc-x2.h>
 #include <ns3/epc-mme.h> // woody3C
+#include <ns3/pf-ff-mac-scheduler.h> // woody
 
 namespace ns3 {
 
@@ -463,6 +464,9 @@ LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8
   Ptr<LteEnbRrc> senbRrc = senbDev->GetRrc();
   Ptr<LteUeRrc> ueRrc = ueDev->GetRrc();
   Ptr<LteUeRrc> ueRrcDc = ueDev->GetRrcDc();
+  Ptr<PfFfMacScheduler> enbPfFfMacScheduler = enbDev->GetFfMacScheduler()->GetObject<PfFfMacScheduler>();
+  Ptr<PfFfMacScheduler> senbPfFfMacScheduler = senbDev->GetFfMacScheduler()->GetObject<PfFfMacScheduler>();
+  if(!enbPfFfMacScheduler || !senbPfFfMacScheduler) NS_FATAL_ERROR ("Only PfFfMacScheduler is dealt");
 
   Ptr<Node> pgwNode = m_epcHelper->GetPgwNode ();
   Ptr<EpcSgwPgwApplication> pgwApp = pgwNode->GetApplication (0)->GetObject<EpcSgwPgwApplication> ();
@@ -471,6 +475,8 @@ LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8
   senbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
   ueRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
   ueRrcDc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  enbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  senbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
 
   if (dcType == 2){
     enbRrc->IsAssistInfoSink (); 

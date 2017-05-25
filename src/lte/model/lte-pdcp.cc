@@ -88,6 +88,7 @@ k=0;
 check =false;
   m_isEnbPdcp =false; // woody
 }
+
 LtePdcp::~LtePdcp ()
 {
   NS_LOG_FUNCTION (this);
@@ -362,6 +363,14 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){ // sjkang
 
   PdcpBuffer[PacketInBuffer.sequenceNumber] = params;
 
+/*    uint16_t nextPDCP_SN = (Last_Submitted_PDCP_RX_SN + 1)%(m_maxPdcpSn+1);
+    std::map<uint16_t, LtePdcpSapUser::ReceivePdcpSduParameters>::iterator it;
+NS_LOG_UNCOND("Buffer status when receivedPDCP " << PacketInBuffer.sequenceNumber << " nextPDCP " << nextPDCP_SN << " LastPDCP " << Last_Submitted_PDCP_RX_SN);
+    for (it = PdcpBuffer.begin(); it->first != nextPDCP_SN && it != PdcpBuffer.end(); it++)
+    {
+NS_LOG_UNCOND(it->first); }
+*/
+
   // ETSI TS 136 323 v14.2.0.
   if (((receivedPDCP_SN -Last_Submitted_PDCP_RX_SN) > reorderingWindow)
       ||((((Last_Submitted_PDCP_RX_SN-receivedPDCP_SN)) >= 0 && ((Last_Submitted_PDCP_RX_SN-receivedPDCP_SN)< reorderingWindow))))
@@ -403,9 +412,8 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){ // sjkang
     uint16_t nextPDCP_SN;
     while(PdcpBuffer.size() > 0)
     {
-      nextPDCP_SN = (Last_Submitted_PDCP_RX_SN + 1)%4096;
+      nextPDCP_SN = (Last_Submitted_PDCP_RX_SN + 1)%(m_maxPdcpSn+1);
       std::map<uint16_t, LtePdcpSapUser::ReceivePdcpSduParameters>::iterator it;
-
       for (it = PdcpBuffer.begin(); it->first != nextPDCP_SN && it != PdcpBuffer.end(); it++)
       { }
 
@@ -443,6 +451,7 @@ LtePdcp::BufferingAndReordering(Ptr<Packet> p){ // sjkang
 void
 LtePdcp::t_ReordringTimer_Expired(){ // sjkang
   NS_LOG_FUNCTION (this);
+NS_LOG_UNCOND("Reordering Timer Expired");
 
   Reordering_PDCP_RX_COUNT = Next_PDCP_RX_SN;
   std::map<uint16_t, LtePdcpSapUser::ReceivePdcpSduParameters> ::iterator it;

@@ -210,6 +210,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 	  {
 	  	// Discard full RLC SDU
 	  	NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
+NS_LOG_UNCOND ("TxBuffer is full. RLC SDU discarded");
 	  	NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
 	  	NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
 	  	NS_LOG_LOGIC ("packet size     = " << p->GetSize ());

@@ -201,11 +201,11 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 int
 main (int argc, char *argv[])
 {
-  double simTime = 15.0;
+  double simTime = 5.0;
   double startTime =1.0;
   int log_packetflow = 0;
   uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
-  uint16_t pdcpReorderingTimer = 10;
+  uint16_t pdcpReorderingTimer = 20;
   std::string outputName;
 
   CommandLine cmd;
@@ -253,7 +253,7 @@ main (int argc, char *argv[])
 
   Config::SetDefault("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
   Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
   Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (1000));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));

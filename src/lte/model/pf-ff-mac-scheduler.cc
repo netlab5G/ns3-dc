@@ -2287,5 +2287,28 @@ PfFfMacScheduler::TransmissionModeConfigurationUpdate (uint16_t rnti, uint8_t tx
   m_cschedSapUser->CschedUeConfigUpdateInd (params);
 }
 
+void
+PfFfMacScheduler::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType){ // woody
+  NS_LOG_FUNCTION (this);
+
+  if (dcType == 2){
+    m_assistInfoSinkEnb = enbRrc;
+  }
+  else if (dcType == 3){
+    m_assistInfoSinkPgw = pgwApp;
+  }
+  else NS_FATAL_ERROR ("Unimplemented DC type");
+}
+
+
+void
+PfFfMacScheduler::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
+  NS_LOG_FUNCTION (this);
+  static const Time delay = MilliSeconds (0);
+  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
+
+  if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
+  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);
+}
 
 }
