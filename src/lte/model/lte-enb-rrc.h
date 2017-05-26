@@ -65,7 +65,7 @@ class UeManager : public Object
   friend class LtePdcpSpecificLtePdcpSapUser<UeManager>;
 
 public:
-   void UpdateEtha(); //sjkang
+
 
   /**
    * The state of the UeManager at the eNB RRC
@@ -107,10 +107,14 @@ protected:
   virtual void DoDispose ();
 public: 
   static TypeId GetTypeId (void);
-  double delayAtMenb, delayAtSenb;//sjkang
+
     double etha_forMenb, etha_forSenb; //sjkang
     const double targetDelay = 0.2; //sjkang
     double pastEthaAtMenb, pastEthaAtSenb;
+    void UpdateEtha_inThroughputModel(); //sjkang
+    void UpdateEtha_inDelayModel(); //sjkang
+	 double sigma = 0.001; //sjkang
+	double alpha =1/99.0; //sjkang
   /** 
    * Set the identifiers of the source eNB for the case where a UE
    * joins the current eNB as part of a handover procedure 

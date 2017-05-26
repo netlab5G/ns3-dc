@@ -700,10 +700,9 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
 
 std::ofstream OutFile_forEtha ("etha.txt");
 void
-UeManager::UpdateEtha(){
+UeManager::UpdateEtha_inDelayModel(){
 	/// the split algorithm using RLC AM queuing delay
-	 double sigma = 0.001;
-	double alpha =1/99.0;
+	double delayAtMenb, delayAtSenb;//sjkang
 	delayAtMenb = info[0].rlc_tx_queue_hol_delay + info[0].rlc_retx_queue_hol_delay;
 	delayAtSenb = info[1].rlc_tx_queue_hol_delay + info[1].rlc_retx_queue_hol_delay;
 	double DelayDifferenceAtMenb = std::max (targetDelay -delayAtMenb,sigma);
@@ -713,8 +712,23 @@ UeManager::UpdateEtha(){
 	etha_forSenb = DelayDifferenceAtSenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
 	pastEthaAtMenb = (1-alpha)*pastEthaAtMenb + alpha*etha_forMenb;
 	pastEthaAtSenb = (1-alpha)*pastEthaAtSenb +alpha* etha_forSenb;
+
 	OutFile_forEtha << "etha1" << "\t" << pastEthaAtMenb << "\t" << "etha2" <<"\t "
 			<< pastEthaAtSenb << std::endl;
+
+
+}
+void
+UeManager::UpdateEtha_inThroughputModel() {
+	double ThroughputAtMenb = info[0].averageThroughut;
+	double ThroughputAtSenb = info[1].averageThroughut;
+	double targetThroughput_AtMenb = 10000000;
+	double targetThroughput_AtSenb = 9000000;
+	double theSumOfThroughputRation = targetThroughput_AtMenb/ThroughputAtMenb
+			+targetThroughput_AtSenb/ThroughputAtSenb;
+
+    double etha_AtMenb= (targetThroughput_AtMenb/ThroughputAtMenb)/theSumOfThroughputRation;
+    double etha_AtSenb=(targetThroughput_AtSenb/ThroughputAtSenb)/theSumOfThroughputRation;
 
 
 }
@@ -754,8 +768,8 @@ UeManager::SplitAlgorithm () // woody
 
     	    	//std ::cout << "etha1_forMenb-->" << etha1_forMenb << std::endl;
     	    	//std ::cout << "etha2_forMenb-->" << etha2_forSenb << std::endl;
-    	        if (count_forSplitting > size*(pastEthaAtSenb)){
-    	        	UpdateEtha();
+    	        if (count_forSplitting > size*(pastEthaAtSenb+pastEthaAtMenb)){
+    	        	UpdateEtha_inDelayModel();
 
     	        	count_forSplitting =0;
     	        	 return 0;

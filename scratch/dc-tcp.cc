@@ -379,7 +379,7 @@ main (int argc, char *argv[])
   Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("300Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("150Mbps"));
   remoteHost->AddApplication (app);
 
   app->SetStartTime (Seconds (startTime));
