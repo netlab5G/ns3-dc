@@ -692,7 +692,7 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
   else if (assistInfo.is_enb) nodeNum = 1;
   else nodeNum = 2;
 
-//NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pdcp_delay " << assistInfo.pdcp_delay << " rlc_avg_buffer " << assistInfo.rlc_avg_buffer << " rlc_tx_queue " << assistInfo.rlc_tx_queue << " rlc_retx_queue " << assistInfo.rlc_retx_queue << " rlc_tx_queue_hol_delay " << assistInfo.rlc_tx_queue_hol_delay << " rlc_retx_queue_hol_delay " << assistInfo.rlc_retx_queue_hol_delay );
+NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pdcp_delay " << assistInfo.pdcp_delay << " rlc_avg_buffer " << assistInfo.rlc_avg_buffer << " rlc_tx_queue " << assistInfo.rlc_tx_queue << " rlc_retx_queue " << assistInfo.rlc_retx_queue << " rlc_tx_queue_hol_delay " << assistInfo.rlc_tx_queue_hol_delay << " rlc_retx_queue_hol_delay " << assistInfo.rlc_retx_queue_hol_delay << " averageThroughput " << assistInfo.averageThroughput);
   info[nodeNum] = assistInfo;
 
   return;
@@ -2782,12 +2782,16 @@ LteEnbRrc::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
   NS_ASSERT_MSG (m_isAssistInfoSink == true, "Not a assist info sink");
 
+//NS_LOG_UNCOND(" check " <<(unsigned) assistInfo.bearerId);
   std::map <uint32_t, X2uTeidInfo >::iterator itX2uTeidInfo;
   for (itX2uTeidInfo = m_x2uTeidInfoMapDc.begin (); itX2uTeidInfo != m_x2uTeidInfoMapDc.end (); itX2uTeidInfo++)
   {
+//NS_LOG_UNCOND((unsigned)itX2uTeidInfo->second.drbid);
     if (itX2uTeidInfo->second.drbid == assistInfo.bearerId) break;
   }
-  NS_ASSERT_MSG (itX2uTeidInfo != m_x2uTeidInfoMapDc.end (), "Cannot find matching bearer");
+
+  if (itX2uTeidInfo == m_x2uTeidInfoMapDc.end ()) return;
+//  NS_ASSERT_MSG (itX2uTeidInfo != m_x2uTeidInfoMapDc.end (), "Cannot find matching bearer");
 
   std::map<uint16_t, Ptr<UeManager> >::iterator itUeManager = m_ueMap.find (itX2uTeidInfo->second.rnti);
   NS_ASSERT_MSG (itUeManager != m_ueMap.end (), "Cannot find matching UE Manager");
