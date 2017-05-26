@@ -108,11 +108,11 @@ protected:
 public: 
   static TypeId GetTypeId (void);
 
-    double etha_forMenb, etha_forSenb; //sjkang
+    double etha_AtMenbFromDelay, etha_AtSenbFromDelay; //sjkang
+    double etha_AtMenbFrom_Thr_,etha_AtSenbFrom_Thr_; //sjkang
     const double targetDelay = 0.2; //sjkang
     double pastEthaAtMenb, pastEthaAtSenb;
-    void UpdateEtha_inThroughputModel(); //sjkang
-    void UpdateEtha_inDelayModel(); //sjkang
+    void UpdateEthas(); //sjkang
 	 double sigma = 0.001; //sjkang
 	double alpha =1/99.0; //sjkang
   /** 

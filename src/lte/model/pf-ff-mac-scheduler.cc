@@ -2339,9 +2339,9 @@ PfFfMacScheduler::GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator 
 	    SchedulerAddressOfEnb2= this;
 	    ccc=2;
 	  }
-	//  LteRrcSap::AssistInfo Info;
-	 // Info.averageThroughput =(*itStats).second.lastAveragedThroughput;
-	 // SendAssistInfo(Info);
+	  LteRrcSap::AssistInfo Info;
+	  Info.averageThroughput =(*itStats).second.lastAveragedThroughput;
+	  m_rrc->SendAssistInfo(Info);
 
 	  if(this== SchedulerAddressOfEnb1)
 		  OutFileOfEnb1Schedule << this<< "\t" << Simulator::Now().GetSeconds() << "\t"

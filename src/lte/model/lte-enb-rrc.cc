@@ -691,8 +691,8 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
   if (assistInfo.is_enb && assistInfo.is_menb) nodeNum = 0;
   else if (assistInfo.is_enb) nodeNum = 1;
   else nodeNum = 2;
-
-NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pdcp_delay " << assistInfo.pdcp_delay << " rlc_avg_buffer " << assistInfo.rlc_avg_buffer << " rlc_tx_queue " << assistInfo.rlc_tx_queue << " rlc_retx_queue " << assistInfo.rlc_retx_queue << " rlc_tx_queue_hol_delay " << assistInfo.rlc_tx_queue_hol_delay << " rlc_retx_queue_hol_delay " << assistInfo.rlc_retx_queue_hol_delay << " averageThroughput " << assistInfo.averageThroughput);
+//if (nodeNum == 1)
+//NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pdcp_delay " << assistInfo.pdcp_delay << " rlc_avg_buffer " << assistInfo.rlc_avg_buffer << " rlc_tx_queue " << assistInfo.rlc_tx_queue << " rlc_retx_queue " << assistInfo.rlc_retx_queue << " rlc_tx_queue_hol_delay " << assistInfo.rlc_tx_queue_hol_delay << " rlc_retx_queue_hol_delay " << assistInfo.rlc_retx_queue_hol_delay << " averageThroughput " << assistInfo.averageThroughput);
   info[nodeNum] = assistInfo;
 
   return;
@@ -700,7 +700,7 @@ NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pd
 
 std::ofstream OutFile_forEtha ("etha.txt");
 void
-UeManager::UpdateEtha_inDelayModel(){
+UeManager::UpdateEthas(){
 	/// the split algorithm using RLC AM queuing delay
 	double delayAtMenb, delayAtSenb;//sjkang
 	delayAtMenb = info[0].rlc_tx_queue_hol_delay + info[0].rlc_retx_queue_hol_delay;
@@ -708,37 +708,35 @@ UeManager::UpdateEtha_inDelayModel(){
 	double DelayDifferenceAtMenb = std::max (targetDelay -delayAtMenb,sigma);
 	double DelayDifferenceAtSenb =std::max (targetDelay -delayAtSenb,sigma);
 
-	etha_forMenb= DelayDifferenceAtMenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
-	etha_forSenb = DelayDifferenceAtSenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
-	pastEthaAtMenb = (1-alpha)*pastEthaAtMenb + alpha*etha_forMenb;
-	pastEthaAtSenb = (1-alpha)*pastEthaAtSenb +alpha* etha_forSenb;
-
-	OutFile_forEtha << "etha1" << "\t" << pastEthaAtMenb << "\t" << "etha2" <<"\t "
-			<< pastEthaAtSenb << std::endl;
+	etha_AtMenbFromDelay= DelayDifferenceAtMenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
+	etha_AtSenbFromDelay = DelayDifferenceAtSenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
+	pastEthaAtMenb = (1-alpha)*pastEthaAtMenb + alpha*etha_AtMenbFromDelay;
+	pastEthaAtSenb = (1-alpha)*pastEthaAtSenb +alpha* etha_AtSenbFromDelay;
 
 
+	double ThroughputAtMenb = info[0].averageThroughput;
+		double ThroughputAtSenb = info[1].averageThroughput;
+		double targetThroughput_AtMenb = 10000000;
+		double targetThroughput_AtSenb = 9000000;
+		double theSumOfThroughputRatio = targetThroughput_AtMenb/ThroughputAtMenb
+				+targetThroughput_AtSenb/ThroughputAtSenb;
+
+		 etha_AtMenbFrom_Thr_= (targetThroughput_AtMenb/ThroughputAtMenb)/theSumOfThroughputRatio;
+		etha_AtSenbFrom_Thr_=(targetThroughput_AtSenb/ThroughputAtSenb)/theSumOfThroughputRatio;
+
+    //  std::cout << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
+
+  	OutFile_forEtha << Simulator::Now().GetSeconds() << " etha1" << "\t" << pastEthaAtMenb << "\t" << "etha2" <<"\t "
+  			<< pastEthaAtSenb << "\t" << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
 }
-void
-UeManager::UpdateEtha_inThroughputModel() {
-	double ThroughputAtMenb = info[0].averageThroughut;
-	double ThroughputAtSenb = info[1].averageThroughut;
-	double targetThroughput_AtMenb = 10000000;
-	double targetThroughput_AtSenb = 9000000;
-	double theSumOfThroughputRation = targetThroughput_AtMenb/ThroughputAtMenb
-			+targetThroughput_AtSenb/ThroughputAtSenb;
 
-    double etha_AtMenb= (targetThroughput_AtMenb/ThroughputAtMenb)/theSumOfThroughputRation;
-    double etha_AtSenb=(targetThroughput_AtSenb/ThroughputAtSenb)/theSumOfThroughputRation;
-
-
-}
 /*
  0: MeNB only
  1: SeNB only
  2: alternative splitting
 
 */
-int m_splitAlgorithm = 2;
+int m_splitAlgorithm = 3;
 
 int m_lastDirection;
 int count_forSplitting=0;
@@ -763,13 +761,10 @@ UeManager::SplitAlgorithm () // woody
       if (m_lastDirection == 0) return 1;
       else return 0;
       break;
-    case 3:
-    	//Simulator::Schedule(Intervel, &UeManager::UpdateEtha(), this);
+    case 3:  //size model
 
-    	    	//std ::cout << "etha1_forMenb-->" << etha1_forMenb << std::endl;
-    	    	//std ::cout << "etha2_forMenb-->" << etha2_forSenb << std::endl;
     	        if (count_forSplitting > size*(pastEthaAtSenb+pastEthaAtMenb)){
-    	        	UpdateEtha_inDelayModel();
+    	        	UpdateEthas();
 
     	        	count_forSplitting =0;
     	        	 return 0;
@@ -788,6 +783,7 @@ UeManager::SplitAlgorithm () // woody
     	        	return 1;
     	        }
     	        break;
+
   }
   return -1;
 }
@@ -1549,6 +1545,7 @@ LteEnbRrc::LteEnbRrc ()
   m_s1SapUser = new MemberEpcEnbS1SapUser<LteEnbRrc> (this);
   m_cphySapUser = new MemberLteEnbCphySapUser<LteEnbRrc> (this);
   m_isAssistInfoSink = false; // woody
+  m_isMenb = false; // woody
 }
 
 
@@ -2786,6 +2783,7 @@ LteEnbRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
 
   if (m_isMenb) assistInfo.is_menb = true;
+  else assistInfo.is_menb = false;
 
   if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
   else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);
