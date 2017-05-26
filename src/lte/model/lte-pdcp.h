@@ -89,7 +89,7 @@ public:
    */
   LteRlcSapUser* GetLteRlcSapUser ();
 
- static const uint16_t MAX_PDCP_SN = 4096;
+ static const uint16_t MAX_PDCP_SN = 16384;//4096;
 
   /**
    * Status variables of the PDCP
@@ -204,8 +204,8 @@ private:
   /**
    * Constants. See section 7.2 in TS 36.323
    */
-   static const uint16_t m_maxPdcpSn=4095;
-   static const int reorderingWindow =2048;
+   static const uint16_t m_maxPdcpSn=16383;//4095;
+   static const int reorderingWindow =8192;//2048;
    int Last_Submitted_PDCP_RX_SN;
    uint16_t *temp ;
   Time  expiredTime;
