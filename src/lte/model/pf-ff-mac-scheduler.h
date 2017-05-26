@@ -108,7 +108,7 @@ public:
 
   void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType); // woody
   void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
-
+  void GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator itStats); //sjkang
 private:
 
   LteRrcSap::AssistInfo m_assistInfo; // woody

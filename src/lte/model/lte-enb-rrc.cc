@@ -41,7 +41,7 @@
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
 
-
+#include <fstream>
 
 namespace ns3 {
 
@@ -698,7 +698,26 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
   return;
 }
 
+std::ofstream OutFile_forEtha ("etha.txt");
+void
+UeManager::UpdateEtha(){
+	/// the split algorithm using RLC AM queuing delay
+	 double sigma = 0.001;
+	double alpha =1/99.0;
+	delayAtMenb = info[0].rlc_tx_queue_hol_delay + info[0].rlc_retx_queue_hol_delay;
+	delayAtSenb = info[1].rlc_tx_queue_hol_delay + info[1].rlc_retx_queue_hol_delay;
+	double DelayDifferenceAtMenb = std::max (targetDelay -delayAtMenb,sigma);
+	double DelayDifferenceAtSenb =std::max (targetDelay -delayAtSenb,sigma);
 
+	etha_forMenb= DelayDifferenceAtMenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
+	etha_forSenb = DelayDifferenceAtSenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
+	pastEthaAtMenb = (1-alpha)*pastEthaAtMenb + alpha*etha_forMenb;
+	pastEthaAtSenb = (1-alpha)*pastEthaAtSenb +alpha* etha_forSenb;
+	OutFile_forEtha << "etha1" << "\t" << pastEthaAtMenb << "\t" << "etha2" <<"\t "
+			<< pastEthaAtSenb << std::endl;
+
+
+}
 /*
  0: MeNB only
  1: SeNB only
@@ -708,13 +727,14 @@ UeManager::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo) // woody
 int m_splitAlgorithm = 2;
 
 int m_lastDirection;
-
+int count_forSplitting=0;
 int
 UeManager::SplitAlgorithm () // woody
 {
   NS_LOG_FUNCTION (this);
 
   // return 0 for Tx through MeNB &  return 1 for Tx through SeNB
+  int size =50;
   switch (m_splitAlgorithm)
   {
     case 0:
@@ -729,6 +749,31 @@ UeManager::SplitAlgorithm () // woody
       if (m_lastDirection == 0) return 1;
       else return 0;
       break;
+    case 3:
+    	//Simulator::Schedule(Intervel, &UeManager::UpdateEtha(), this);
+
+    	    	//std ::cout << "etha1_forMenb-->" << etha1_forMenb << std::endl;
+    	    	//std ::cout << "etha2_forMenb-->" << etha2_forSenb << std::endl;
+    	        if (count_forSplitting > size*(pastEthaAtSenb)){
+    	        	UpdateEtha();
+
+    	        	count_forSplitting =0;
+    	        	 return 0;
+    	        }
+    	        else if (count_forSplitting < pastEthaAtMenb*size)
+    	        {
+
+    	        	count_forSplitting++;
+    	        	return 0;
+
+    	        }
+    	        else if (count_forSplitting >= pastEthaAtMenb *size
+    	        		&& count_forSplitting <= size*(pastEthaAtMenb+pastEthaAtSenb))
+    	        {
+    	          	count_forSplitting++;
+    	        	return 1;
+    	        }
+    	        break;
   }
   return -1;
 }
