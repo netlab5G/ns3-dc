@@ -235,7 +235,7 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("LteUePhy", LOG_FUNCTION);
 //  LogComponentEnable ("EpcTftClassifier", LOG_FUNCTION);
 //  LogComponentEnable ("EpcTft", LOG_FUNCTION);
-//  LogComponentEnable ("PfFfMacScheduler", LOG_FUNCTION);
+//  LogComponentEnable ("FfMacScheduler", LOG_FUNCTION);
 //  LogComponentEnable ("LteEnbMac", LOG_DEBUG);
 //  LogComponentEnable ("LteRlcUm", LOG_LOGIC);
 //  LogComponentEnable ("EpcX2", LOG_FUNCTION);
@@ -318,15 +318,24 @@ main (int argc, char *argv[])
 
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
   positionAlloc->Add (Vector(0, 0, 0)); // for LTE MeNB
-  positionAlloc->Add (Vector(0, 0, 0)); // for LTE SeNB
-  positionAlloc->Add (Vector(0, 0, 0)); // for LTE UE
+  positionAlloc->Add (Vector(100, 0, 0)); // for LTE SeNB
+//  positionAlloc->Add (Vector(0, 0, 0)); // for LTE UE
 
   MobilityHelper mobility;
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (enbNodes);
   mobility.Install (senbNodes);
-  mobility.Install (ueNodes);
+//  mobility.Install (ueNodes);
+
+  Ptr<ListPositionAllocator> positionAlloc_velocity = CreateObject<ListPositionAllocator> ();
+  positionAlloc_velocity->Add (Vector(0,0,0));
+  
+  MobilityHelper mobility_velocity;
+  mobility_velocity.SetPositionAllocator (positionAlloc_velocity);
+  mobility_velocity.SetMobilityModel ("Ns3::ConstantVelocityMobilityModel");
+  mobility_velocity.Install (ueNodes);
+  ueNodes.Get(0)->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(Vector(5.0, 0, 0));
 
   // Install LTE Devices to the nodes
   NS_LOG_UNCOND("# Install LTE device to the nodes");
@@ -379,7 +388,7 @@ main (int argc, char *argv[])
   Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("150Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("300Mbps"));
   remoteHost->AddApplication (app);
 
   app->SetStartTime (Seconds (startTime));

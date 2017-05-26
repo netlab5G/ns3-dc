@@ -108,12 +108,15 @@ public:
 
   void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType); // woody
   void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+  void SetRrc (Ptr<LteEnbRrc> enbRrc); // woody
+
   void GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator itStats); //sjkang
 private:
 
   LteRrcSap::AssistInfo m_assistInfo; // woody
   Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
   Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
+  Ptr<LteEnbRrc> m_rrc; // woody
 
   //
   // Implementation of the CSCHED API primitives

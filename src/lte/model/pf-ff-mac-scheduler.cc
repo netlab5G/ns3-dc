@@ -2304,13 +2304,20 @@ PfFfMacScheduler::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplica
 
 void
 PfFfMacScheduler::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
-  NS_LOG_FUNCTION (this);
+  NS_FATAL_ERROR("Currently Not Used");
+/*  NS_LOG_FUNCTION (this);
   static const Time delay = MilliSeconds (0);
   NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
 
   if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
-  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);
+  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);*/
 }
+
+void
+PfFfMacScheduler::SetRrc (Ptr<LteEnbRrc> enbRrc){ // woody
+  m_rrc = enbRrc;
+}
+
 
 /// sjkang
 std::ofstream OutFileOfEnb1Schedule("enb1_AverageThroughput.txt");
@@ -2333,7 +2340,7 @@ PfFfMacScheduler::GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator 
 	    ccc=2;
 	  }
 	//  LteRrcSap::AssistInfo Info;
-	 // Info.averageThroughut =(*itStats).second.lastAveragedThroughput;
+	 // Info.averageThroughput =(*itStats).second.lastAveragedThroughput;
 	 // SendAssistInfo(Info);
 
 	  if(this== SchedulerAddressOfEnb1)

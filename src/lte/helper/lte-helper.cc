@@ -475,8 +475,10 @@ LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8
   senbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
   ueRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
   ueRrcDc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
-  enbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
-  senbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+//  enbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+//  senbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  enbPfFfMacScheduler->SetRrc (enbRrc);
+  senbPfFfMacScheduler->SetRrc (senbRrc);
 
   if (dcType == 2){
     enbRrc->IsAssistInfoSink (); 
