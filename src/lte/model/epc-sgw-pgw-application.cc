@@ -150,6 +150,12 @@ EpcSgwPgwApplication::~EpcSgwPgwApplication ()
   NS_LOG_FUNCTION (this);
 }
 
+void
+EpcSgwPgwApplication::SetSplitAlgorithm (uint16_t splitAlgorithm) // woody
+{
+  m_splitAlgorithm = splitAlgorithm;
+}
+
 LteRrcSap::AssistInfo info1X[3];
 
 void
@@ -168,23 +174,20 @@ EpcSgwPgwApplication::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // wood
   return;
 }
 
+int
+EpcSgwPgwApplication::SplitAlgorithm ()
+{
+  NS_LOG_FUNCTION (this);
 /*
  0: MeNB only
  1: SeNB only
  2: alternative splitting
 
 */
-int m_splitAlgorithm1X = 2;
 
-int m_lastDirection1X;
-
-int
-EpcSgwPgwApplication::SplitAlgorithm ()
-{
-  NS_LOG_FUNCTION (this);
 
   // return 0 for Tx through MeNB &  return 1 for Tx through SeNB
-  switch (m_splitAlgorithm1X)
+  switch (m_splitAlgorithm)
   {
     case 0:
       return 0;

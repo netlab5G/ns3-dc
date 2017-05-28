@@ -49,7 +49,7 @@ LtePdcpHeader::SetDcBit (uint8_t dcBit)
 void
 LtePdcpHeader::SetSequenceNumber (uint16_t sequenceNumber)
 {
-  m_sequenceNumber = sequenceNumber & 0x3FFF;//0x0FFF;
+  m_sequenceNumber = sequenceNumber & 0x7FFF;//0x0FFF;
 }
 
 uint8_t
@@ -97,7 +97,7 @@ void LtePdcpHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
 
-  i.WriteU8 ( (m_dcBit << 7) | (m_sequenceNumber & 0x3F00) >> 8);//0x0F00) >> 8 );
+  i.WriteU8 ( (m_dcBit << 7) | (m_sequenceNumber & 0x7F00) >> 8);//0x0F00) >> 8 );
   i.WriteU8 ( (m_sequenceNumber & 0x00FF) );
 }
 
@@ -112,7 +112,7 @@ uint32_t LtePdcpHeader::Deserialize (Buffer::Iterator start)
   m_dcBit = (byte_1 & 0x80) > 7;
   // For now, we just support DATA PDUs
   NS_ASSERT (m_dcBit == DATA_PDU);
-  m_sequenceNumber = ((byte_1 & 0x3F) << 8) | byte_2; //0x0F) << 8) | byte_2;
+  m_sequenceNumber = ((byte_1 & 0x7F) << 8) | byte_2; //0x0F) << 8) | byte_2;
 
   return GetSerializedSize ();
 }

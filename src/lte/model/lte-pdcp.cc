@@ -451,7 +451,7 @@ NS_LOG_UNCOND(it->first); }
 void
 LtePdcp::t_ReordringTimer_Expired(){ // sjkang
   NS_LOG_FUNCTION (this);
-NS_LOG_UNCOND("Reordering Timer Expired");
+NS_LOG_UNCOND("PDCP Reordering Timer Expired at " << Simulator::Now().GetSeconds());
 
   Reordering_PDCP_RX_COUNT = Next_PDCP_RX_SN;
   std::map<uint16_t, LtePdcpSapUser::ReceivePdcpSduParameters> ::iterator it;

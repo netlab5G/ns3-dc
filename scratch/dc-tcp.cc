@@ -204,15 +204,39 @@ main (int argc, char *argv[])
   double simTime = 15.0;
   double startTime =1.0;
   int log_packetflow = 0;
-  uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
-  uint16_t pdcpReorderingTimer = 20;
+  int dcType_t = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
+  int pdcpReorderingTimer_t = 100;
+  uint16_t downlinkRb = 100;
+  int splitAlgorithm_t = 1;
+/*
+ 0: MeNB only
+ 1: SeNB only
+ 2: alternative splitting
+ 3: Proposed V1
+*/
+
+  uint8_t dcType;
+  uint16_t  pdcpReorderingTimer, splitAlgorithm;
   std::string outputName;
 
   CommandLine cmd;
   cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
-  cmd.AddValue("pdcpReorderingTimer", "PDCP reordering timer [ms])", pdcpReorderingTimer);
+  cmd.AddValue("pdcpReorderingTimer", "PDCP reordering timer [ms])", pdcpReorderingTimer_t);
   cmd.AddValue("outputName", "Output file name", outputName);
+  cmd.AddValue("splitAlgorithm", "Selecting splitting algorithm", splitAlgorithm_t);
+  cmd.AddValue("dcType", "Select DC Type", dcType_t);
   cmd.Parse(argc, argv);
+
+  dcType = (unsigned) dcType_t;
+  pdcpReorderingTimer = (unsigned) pdcpReorderingTimer_t;
+  splitAlgorithm = (unsigned) splitAlgorithm_t;
+
+  NS_LOG_UNCOND("Simulation Setting");
+  NS_LOG_UNCOND(" -simTime(s) = " << simTime);
+  NS_LOG_UNCOND(" -App = TCP");
+  NS_LOG_UNCOND(" -dcType = " << (unsigned) dcType);
+  NS_LOG_UNCOND(" -splitAlgorithm = " << (unsigned) splitAlgorithm);
+  NS_LOG_UNCOND(" -pdcpReorderingTimer(ms) = " << (unsigned) pdcpReorderingTimer);
 
 //  LogComponentEnable ("LteHelper", LOG_FUNCTION);
 //  LogComponentEnable ("PointToPointEpcHelper", LOG_FUNCTION);
@@ -251,7 +275,13 @@ main (int argc, char *argv[])
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
 
-  Config::SetDefault("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
+  Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
+  Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
+  Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(20)));
+  Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
+
   Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
   Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (1000));
@@ -262,14 +292,16 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+  Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
   Ptr<PointToPointEpcHelper>  epcHelper = CreateObject<PointToPointEpcHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
 
-//  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
-//  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
@@ -277,6 +309,8 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
+
+  pgw->GetApplication (0) -> GetObject<EpcSgwPgwApplication> () -> SetSplitAlgorithm(splitAlgorithm);
 
    // Create a single RemoteHost
   NS_LOG_UNCOND("# Create a remote host");
@@ -379,7 +413,7 @@ main (int argc, char *argv[])
   Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("150Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("300Mbps"));
   remoteHost->AddApplication (app);
 
   app->SetStartTime (Seconds (startTime));

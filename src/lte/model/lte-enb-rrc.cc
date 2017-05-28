@@ -305,6 +305,10 @@ TypeId UeManager::GetTypeId (void)
                    UintegerValue (0), // unused, read-only attribute
                    MakeUintegerAccessor (&UeManager::m_rnti),
                    MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("SplitAlgorithm", "splitting algorithm for routing split bearer on dual connection", // woody
+                   UintegerValue (2),
+                   MakeUintegerAccessor (&UeManager::m_splitAlgorithm),
+                   MakeUintegerChecker<uint16_t> ())
     .AddTraceSource ("StateTransition",
                      "fired upon every UE state transition seen by the "
                      "UeManager at the eNB RRC",
@@ -732,20 +736,17 @@ UeManager::UpdateEthas(){
   			<< pastEthaAtSenb << "\t" << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
 }
 
+int count_forSplitting=0;
+int
+UeManager::SplitAlgorithm () // woody
+{
+  NS_LOG_FUNCTION (this);
 /*
  0: MeNB only
  1: SeNB only
  2: alternative splitting
 
 */
-int m_splitAlgorithm = 3;
-
-int m_lastDirection;
-int count_forSplitting=0;
-int
-UeManager::SplitAlgorithm () // woody
-{
-  NS_LOG_FUNCTION (this);
 
   // return 0 for Tx through MeNB &  return 1 for Tx through SeNB
   int size =50;
@@ -2757,14 +2758,13 @@ LteEnbRrc::SetDcCell (uint16_t dcCell){ // woody3C
 void
 LteEnbRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType){ // woody
   NS_LOG_FUNCTION (this);
-
   if (dcType == 2){
     m_assistInfoSinkEnb = enbRrc;
   }
   else if (dcType == 3){
     m_assistInfoSinkPgw = pgwApp;
   }
-  else NS_FATAL_ERROR ("Unimplemented DC type");
+  else NS_FATAL_ERROR ("Unimplemented DC type " << dcType);
 }
 
 void

@@ -341,6 +341,8 @@ private:
 
   uint16_t m_dcCell; // woody3C
   uint8_t m_currentBid; // woody3C
+  uint16_t m_splitAlgorithm; // woody
+  int m_lastDirection;
 
   /** 
    * Add a new LteDataRadioBearerInfo structure to the UeManager

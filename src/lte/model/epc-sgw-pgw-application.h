@@ -151,6 +151,8 @@ public:
    */
   void SetUeAddress (uint64_t imsi, Ipv4Address ueAddr);
 
+  void SetSplitAlgorithm (uint16_t splitAlgorithm); // woody
+
   void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
   int SplitAlgorithm (); // woody
   void IsAssistInfoSink (); // woody
@@ -158,6 +160,8 @@ public:
 private:
 
   bool m_isAssistInfoSink; // woody
+  uint16_t m_splitAlgorithm; // woody
+  int m_lastDirection1X;
 
   // S11 SAP SGW methods
   void DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequestMessage msg);
