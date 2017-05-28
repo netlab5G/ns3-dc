@@ -208,6 +208,7 @@ main (int argc, char *argv[])
   int pdcpReorderingTimer_t = 100;
   uint16_t downlinkRb = 100;
   int splitAlgorithm_t = 1;
+  int x2LinkDelay = 20;
 /*
  0: MeNB only
  1: SeNB only
@@ -225,6 +226,7 @@ main (int argc, char *argv[])
   cmd.AddValue("outputName", "Output file name", outputName);
   cmd.AddValue("splitAlgorithm", "Selecting splitting algorithm", splitAlgorithm_t);
   cmd.AddValue("dcType", "Select DC Type", dcType_t);
+  cmd.AddValue("x2LinkDelay", "X2 interface link delay", x2LinkDelay);
   cmd.Parse(argc, argv);
 
   dcType = (unsigned) dcType_t;
@@ -237,6 +239,7 @@ main (int argc, char *argv[])
   NS_LOG_UNCOND(" -dcType = " << (unsigned) dcType);
   NS_LOG_UNCOND(" -splitAlgorithm = " << (unsigned) splitAlgorithm);
   NS_LOG_UNCOND(" -pdcpReorderingTimer(ms) = " << (unsigned) pdcpReorderingTimer);
+  NS_LOG_UNCOND(" -x2LinkDelay(ms) = " << x2LinkDelay);
 
 //  LogComponentEnable ("LteHelper", LOG_FUNCTION);
 //  LogComponentEnable ("PointToPointEpcHelper", LOG_FUNCTION);
@@ -275,13 +278,16 @@ main (int argc, char *argv[])
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
 
+  // These attributes need to be checked
   Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
   Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
   Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
   Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
-  Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(20)));
+  Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
+  Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
 
+  // These would be used as default for most cases
   Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
   Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (1000));
@@ -292,7 +298,6 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-  Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
   Config::SetDefault ("ns3::CoDelQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
