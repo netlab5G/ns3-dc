@@ -400,6 +400,8 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
       rlc->IsEnbRlc();
       rlc->SetRrc(m_rrc, 0);
       rlc->SetAssistInfoPtr(&m_assistInfo);
+
+      m_rrc->SetAssistInfoPtr(&m_assistInfo);
     }
 
   LteEnbCmacSapProvider::LcInfo lcinfo;
@@ -2810,6 +2812,32 @@ LteEnbRrc::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
 
   itUeManager->second->RecvAssistInfo (assistInfo);
 }
+/*
+void
+LteEnbRrc::SetPfFfMacScheduler (Ptr<PfFfMacScheduler> pfFfMacScheduler) { // woody
+  m_pfFfMacScheduler = pfFfMacScheduler;
+}
+
+Ptr<PfFfMacScheduler>
+LteEnbRrc::GetPfFfMacScheduler () { // woody
+  return m_pfFfMacScheduler;
+}
+*/
+
+void
+LteEnbRrc::SetAssistInfoPtr (LteRrcSap::AssistInfo *assistInfo) // woody
+{
+  NS_LOG_FUNCTION (this);
+  m_assistInfoPtr = assistInfo;
+}
+
+LteRrcSap::AssistInfo*
+LteEnbRrc::GetAssistInfoPtr () // woody
+{
+  NS_LOG_FUNCTION (this);
+  return m_assistInfoPtr;
+}
+
 
 } // namespace ns3
 

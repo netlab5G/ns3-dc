@@ -31,7 +31,7 @@
 #include <ns3/lte-amc.h>
 #include <ns3/lte-ffr-sap.h>
 
-#include <ns3/lte-enb-rrc.h> // woody
+#include "ns3/lte-enb-rrc.h" // woody
 #include <ns3/epc-sgw-pgw-application.h> // woody
 #include <ns3/lte-rrc-sap.h> // woody
 
@@ -106,17 +106,15 @@ public:
 
   void TransmissionModeConfigurationUpdate (uint16_t rnti, uint8_t txMode);
 
-  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType); // woody
   void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
   void SetRrc (Ptr<LteEnbRrc> enbRrc); // woody
 
   void GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator itStats); //sjkang
 private:
 
-  LteRrcSap::AssistInfo m_assistInfo; // woody
-  Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
-  Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
   Ptr<LteEnbRrc> m_rrc; // woody
+  LteRrcSap::AssistInfo m_assistInfo; // woody
+  LteRrcSap::AssistInfo *m_assistInfoPtr; // woody
 
   //
   // Implementation of the CSCHED API primitives

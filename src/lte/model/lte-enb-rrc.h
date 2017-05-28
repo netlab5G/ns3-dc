@@ -569,6 +569,12 @@ public:
   void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
   void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
 
+  LteRrcSap::AssistInfo* GetAssistInfoPtr (); // woody
+  void SetAssistInfoPtr (LteRrcSap::AssistInfo *assistInfo); // woody
+  LteRrcSap::AssistInfo *m_assistInfoPtr; // woody
+
+
+
   /**
    * Set the X2 SAP this RRC should interact with
    * \param s the X2 SAP Provider to be used by this RRC entity

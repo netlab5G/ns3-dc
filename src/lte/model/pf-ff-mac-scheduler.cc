@@ -31,6 +31,8 @@
 #include <set>
 #include<fstream>
 
+#include <ns3/lte-enb-rrc.h> // woody
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("PfFfMacScheduler");
@@ -2289,35 +2291,22 @@ PfFfMacScheduler::TransmissionModeConfigurationUpdate (uint16_t rnti, uint8_t tx
 }
 
 void
-PfFfMacScheduler::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType){ // woody
+PfFfMacScheduler::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
 
-  if (dcType == 2){
-    m_assistInfoSinkEnb = enbRrc;
+  if(m_assistInfoPtr == NULL)
+  {
+    m_assistInfoPtr = m_rrc->GetAssistInfoPtr ();
+    if (m_assistInfoPtr == NULL) return;
   }
-  else if (dcType == 3){
-    m_assistInfoSinkPgw = pgwApp;
-  }
-  else NS_FATAL_ERROR ("Unimplemented DC type");
-}
-
-
-void
-PfFfMacScheduler::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
-  NS_FATAL_ERROR("Currently Not Used");
-/*  NS_LOG_FUNCTION (this);
-  static const Time delay = MilliSeconds (0);
-  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
-
-  if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
-  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);*/
+  m_assistInfoPtr->averageThroughput = m_assistInfo.averageThroughput;
+  m_rrc->SendAssistInfo (*m_assistInfoPtr);
 }
 
 void
 PfFfMacScheduler::SetRrc (Ptr<LteEnbRrc> enbRrc){ // woody
   m_rrc = enbRrc;
 }
-
 
 /// sjkang
 std::ofstream OutFileOfEnb1Schedule("enb1_AverageThroughput.txt");
@@ -2339,9 +2328,8 @@ PfFfMacScheduler::GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator 
 	    SchedulerAddressOfEnb2= this;
 	    ccc=2;
 	  }
-	  LteRrcSap::AssistInfo Info;
-	  Info.averageThroughput =(*itStats).second.lastAveragedThroughput;
-          if(m_rrc) m_rrc->SendAssistInfo(Info);
+	  m_assistInfo.averageThroughput =(*itStats).second.lastAveragedThroughput;
+          SendAssistInfo(m_assistInfo);
 
 	  if(this== SchedulerAddressOfEnb1)
 		  OutFileOfEnb1Schedule << this<< "\t" << Simulator::Now().GetSeconds() << "\t"
