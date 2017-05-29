@@ -153,7 +153,7 @@ EpcMme::AddBearerDc (uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer, uint8_t d
   bearerInfo.bearerId = ++(it->second->bearerCounter);
   bearerInfo.tft = tft;
   bearerInfo.bearer = bearer;
-  bearerInfo.dcType = dcType; // woody, {SC = 0, DC_1A = 1, DC_3C = 2, DC_1Z = 3}
+  bearerInfo.dcType = dcType; // woody, {SC = 0, DC_1A = 1, DC_3C = 2, DC_1X = 3}
   it->second->bearersToBeActivatedDc.push_back (bearerInfo);
   return bearerInfo.bearerId;
 }
@@ -211,6 +211,10 @@ EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t ims
     }
     else if (dcType == 2){
       msg. uli.gci = m_SenbMenbMap[gci]; // woody3C
+    }
+    else if (dcType == 3){
+      msg. uli.gci = gci;
+      msg. isSenb = 1;
     }
     else {NS_FATAL_ERROR ("unimplemented DC type");}
   }
@@ -288,7 +292,7 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
     NS_ASSERT_MSG (jt != m_enbInfoMap.end (), "could not find any SeNB with CellId " << cellId);
     jt->second->s1apSapEnb->InitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupList);
   }
-  else if (dcType == 2) { // woody3C
+  else if (dcType == 2 || dcType == 3) { // woody3C, woody1X
     cellId = it->second->cellId;
     uint16_t enbUeS1Id = it->second->enbUeS1Id;
     uint64_t mmeUeS1Id = it->second->mmeUeS1Id;
@@ -315,7 +319,6 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
     std::map<uint16_t, Ptr<EnbInfo> >::iterator jtDc = m_enbInfoMap.find (cellIdDc);
     NS_ASSERT_MSG (jtDc != m_enbInfoMap.end (), "could not find any eNB with CellIdDc " << cellIdDc);
     jtDc->second->s1apSapEnb->InitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupList);
-   
   }
   else {NS_FATAL_ERROR ("unimplemented DC type");}
 }

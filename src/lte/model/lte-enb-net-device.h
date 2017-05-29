@@ -167,6 +167,8 @@ public:
    */
   void SetCsgIndication (bool csgIndication);
 
+  Ptr<FfMacScheduler> GetFfMacScheduler (void); // woody
+
 protected:
   // inherited from Object
   virtual void DoInitialize (void);

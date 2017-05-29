@@ -150,6 +150,60 @@ EpcSgwPgwApplication::~EpcSgwPgwApplication ()
   NS_LOG_FUNCTION (this);
 }
 
+void
+EpcSgwPgwApplication::SetSplitAlgorithm (uint16_t splitAlgorithm) // woody
+{
+  m_splitAlgorithm = splitAlgorithm;
+}
+
+LteRrcSap::AssistInfo info1X[3];
+
+void
+EpcSgwPgwApplication::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT_MSG (m_isAssistInfoSink == true, "Not a assist info sink");
+
+  int nodeNum;
+  if (assistInfo.is_enb && assistInfo.is_menb) nodeNum = 0;
+  else if (assistInfo.is_enb) nodeNum = 1;
+  else nodeNum = 2;
+
+//NS_LOG_UNCOND("nodeNum " << nodeNum << " pdcp_sn " << assistInfo.pdcp_sn << " pdcp_delay " << assistInfo.pdcp_delay << " rlc_avg_buffer " << assistInfo.rlc_avg_buffer << " rlc_tx_queue " << assistInfo.rlc_tx_queue << " rlc_retx_queue " << assistInfo.rlc_retx_queue << " rlc_tx_queue_hol_delay " << assistInfo.rlc_tx_queue_hol_delay << " rlc_retx_queue_hol_delay " << assistInfo.rlc_retx_queue_hol_delay );
+  info1X[nodeNum] = assistInfo;
+
+  return;
+}
+
+int
+EpcSgwPgwApplication::SplitAlgorithm ()
+{
+  NS_LOG_FUNCTION (this);
+/*
+ 0: MeNB only
+ 1: SeNB only
+ 2: alternative splitting
+
+*/
+
+
+  // return 0 for Tx through MeNB &  return 1 for Tx through SeNB
+  switch (m_splitAlgorithm)
+  {
+    case 0:
+      return 0;
+      break;
+
+    case 1:
+      return 1;
+      break;
+
+    case 2:
+      if (m_lastDirection1X == 0) return 1;
+      else return 0;
+      break;
+  }
+  return -1;
+}
 
 bool
 EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
@@ -164,7 +218,7 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
   NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
 
   // woody, for observing packet flow
-  NS_LOG_INFO ("**SgwPgw, " << Simulator::Now ().GetSeconds () << "s "
+  NS_LOG_INFO ("***SgwPgw, " << Simulator::Now ().GetSeconds () << "s "
               <<  packet->GetSize () << " bytes from "
               << ipv4Header.GetSource () << " to " << ueAddr );
 
@@ -186,27 +240,45 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
       else
         {
 
-    	  /** sychoi, woody inserted
+    	  /** sychoi, modified by woody
     	   * Here, we need to implement the branch point for selecting the next eNB to steer DL packet.
     	   * Using newly defined map, m_dcEnbAddrByTeidMap, find the SeNB address, senbAddr.
     	   * Because of backward compatibility, m_dcEnbAddrByTeidMap is used only for DC packet routing.
     	   * If there is no SeNB Address, then the packet is forwarded to MeNB.
     	   * Otherwise, the packet is forwarded to SeNB.
     	   */
+          if(it->second->dcType == 0 || it->second->dcType == 2){
+            NS_LOG_INFO ("***SgwPgw send to MeNB " << enbAddr << " with teid " << teid);
+            SendToS1uSocket (packet, enbAddr, teid);
+          }
+          else if(it->second->dcType == 1){
+            std::map<uint32_t, Ipv4Address>::iterator senbAddrIt = m_dcEnbAddrByTeidMap.find (teid);
+            Ipv4Address senbAddr = senbAddrIt->second;
+            if (senbAddrIt == m_dcEnbAddrByTeidMap.end ()) NS_FATAL_ERROR("Cannot find senbAddr");
 
-    	  std::map<uint32_t, Ipv4Address>::iterator senbAddrIt = m_dcEnbAddrByTeidMap.find (teid);
-    	  Ipv4Address senbAddr = senbAddrIt->second;
+            NS_LOG_INFO ("***SgwPgw send to SeNB " << senbAddr << " with teid " << teid);
+            SendToS1uSocket (packet, senbAddr, teid);
+          }
+          else if(it->second->dcType == 3){
+            int t_splitter = SplitAlgorithm();
 
-    	  if (senbAddrIt == m_dcEnbAddrByTeidMap.end ())
-    	  {
-		  NS_LOG_INFO ("**Send to MeNB " << enbAddr << " with teid " << teid);
-    		  SendToS1uSocket (packet, enbAddr, teid);
-    	  }
-    	  else // need to check if senbAddr is correct or not.
-    	  {
-		  NS_LOG_INFO ("**Send to SeNB " << senbAddr << " with teid " << teid);
-    		  SendToS1uSocket (packet, senbAddr, teid);
-    	  }
+            std::map<uint32_t, Ipv4Address>::iterator senbAddrIt = m_dcEnbAddrByTeidMap.find (teid);
+            Ipv4Address senbAddr = senbAddrIt->second;
+            if (senbAddrIt == m_dcEnbAddrByTeidMap.end ()) NS_FATAL_ERROR("Cannot find senbAddr");
+
+            if (t_splitter == 1){
+              NS_LOG_INFO ("***SgwPgw send to SeNB " << senbAddr << " with teid " << teid);
+              m_lastDirection1X = 1;
+              SendToS1uSocket (packet, senbAddr, teid);
+            }
+            else if (t_splitter == 0) {
+              NS_LOG_INFO ("***SgwPgw send to MeNB " << enbAddr << " with teid " << teid);
+              m_lastDirection1X = 0;
+              SendToS1uSocket (packet, enbAddr, teid);
+            }
+            else NS_FATAL_ERROR ("unknwon t_splitter value");
+          }
+          else NS_FATAL_ERROR("Unimplemented DC type");
 
         }
     }
@@ -320,6 +392,7 @@ EpcSgwPgwApplication::DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequest
       uint32_t teid = ++m_teidCount;  
       ueit->second->AddBearer (bit->tft, bit->epsBearerId, teid);
 
+      ueit->second->dcType = bit->dcType;
       // if the bearer type is DC, add list eNB addr into SenbMap
       if(bit->dcType == 0 || bit->dcType == 2) { // woody3C
           NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
@@ -329,6 +402,20 @@ EpcSgwPgwApplication::DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequest
           NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
           ueit->second->SetSenbAddr (enbAddr); // woody, actually SetSenbAddr is currently not utilized
           m_dcEnbAddrByTeidMap[teid] = enbAddr;
+      }
+      else if(bit->dcType == 3) {  // woody1X
+          if (req.isSenb == 1)
+          {
+            NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+            ueit->second->SetSenbAddr (enbAddr); // woody, actually SetSenbAddr is currently not utilized
+            m_dcEnbAddrByTeidMap[teid] = enbAddr;
+ 
+          }
+          else
+          {
+            NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+            ueit->second->SetEnbAddr (enbAddr);
+          }
       }
       else {
           NS_FATAL_ERROR("unimplemented DC type");
@@ -403,6 +490,12 @@ EpcSgwPgwApplication::DoDeleteBearerResponse (EpcS11SapSgw::DeleteBearerResponse
       //Function to remove de-activated bearer contexts from S-Gw and P-Gw side
       ueit->second->RemoveBearer (bit->epsBearerId);
     }
+}
+
+void
+EpcSgwPgwApplication::IsAssistInfoSink (){ // woody
+  NS_LOG_FUNCTION (this);
+  m_isAssistInfoSink = true;
 }
 
 }  // namespace ns3

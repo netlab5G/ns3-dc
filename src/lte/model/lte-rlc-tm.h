@@ -24,6 +24,10 @@
 
 #include "ns3/lte-rlc.h"
 
+#include "ns3/lte-rrc-sap.h" // woody
+#include "ns3/lte-enb-rrc.h" // woody
+#include "ns3/lte-ue-rrc.h" // woody 
+
 #include <ns3/event-id.h>
 #include <map>
 
@@ -51,6 +55,12 @@ public:
   virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void DoNotifyHarqDeliveryFailure ();
   virtual void DoReceivePdu (Ptr<Packet> p);
+
+  virtual double GetBufferSize(); // sjkang
+
+  virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr); // woody
+  virtual void IsEnbRlc (void); // woody
+  virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc); // woody
 
 private:
   void ExpireRbsTimer (void);

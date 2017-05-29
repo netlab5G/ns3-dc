@@ -29,6 +29,10 @@
 #include "ns3/lte-pdcp-sap.h"
 #include "ns3/lte-rlc-sap.h"
 
+#include "ns3/lte-rrc-sap.h" // woody
+#include "ns3/lte-enb-rrc.h" // woody
+#include "ns3/lte-ue-rrc.h" // woody
+
 namespace ns3 {
 
 /**
@@ -43,7 +47,6 @@ public:
   virtual ~LtePdcp ();
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
-
   /**
    *
    *
@@ -86,7 +89,7 @@ public:
    */
   LteRlcSapUser* GetLteRlcSapUser ();
 
-  static const uint16_t MAX_PDCP_SN = 4096;
+ static const uint16_t MAX_PDCP_SN = 32768;//16384;//4096;
 
   /**
    * Status variables of the PDCP
@@ -97,7 +100,11 @@ public:
     uint16_t txSn; ///< TX sequence number
     uint16_t rxSn; ///< RX sequence number
   };
-
+  struct BufferedPackets{
+ 	  uint16_t sequenceNumber;
+ 	  LtePdcpSapUser::ReceivePdcpSduParameters params;
+ 	  uint16_t RX_HFN;
+   };
   /** 
    * 
    * \return the current status of the PDCP
@@ -134,8 +141,17 @@ public:
   typedef void (* PduRxTracedCallback)
     (const uint16_t rnti, const uint8_t lcid,
      const uint32_t size, const uint64_t delay);
+  void BufferingAndReordering(Ptr<Packet> p);
+  void printData(std::string filename, uint16_t SN);
+  void t_ReordringTimer_Expired();
 
-  void IsEnbPdcp (); // woody3C
+  Time PdcpDelayCalculater(uint16_t SN); // sjkang
+
+  // woody
+  void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
+  void IsEnbPdcp (void);
+  Ptr<LteEnbRrc> m_enbRrc;
+  Ptr<LteUeRrc> m_ueRrc;
 
 protected:
   // Interface provided to upper RRC entity
@@ -153,6 +169,19 @@ protected:
 
   uint16_t m_rnti;
   uint8_t m_lcid;
+  int k;
+
+  //sjkang
+  int receivedPDCP_SN;
+  int Reordering_PDCP_RX_COUNT;
+  int Next_PDCP_RX_SN;
+  std::map <uint16_t,LtePdcpSapUser::ReceivePdcpSduParameters> PdcpBuffer;
+  EventId t_ReorderingTimer;
+
+  // sjkang, for measuring delay
+  std::map<uint16_t, Time>  CheckingArrivalOfSN, PropagationDelaybySN;
+  Time PdcpDelay;
+  Time delay;
 
   /**
    * Used to inform of a PDU delivery to the RLC SAP provider.
@@ -171,14 +200,22 @@ private:
    */
   uint16_t m_txSequenceNumber;
   uint16_t m_rxSequenceNumber;
-
+   bool check;
   /**
    * Constants. See section 7.2 in TS 36.323
    */
-  static const uint16_t m_maxPdcpSn = 4095;
+   static const uint16_t m_maxPdcpSn=32767;//16383;//4095;
+   static const int reorderingWindow =16384;//8192;//2048;
+   int Last_Submitted_PDCP_RX_SN;
+   uint16_t *temp ;
+  Time  expiredTime;
+   // bool CheckReodering_PDCP_RX_COUNT_1;
+    int randomSequence[10000] ;
 
-  uint16_t isEnbPdcp; // woody3C
-
+  // woody
+  bool m_isEnbPdcp;
+  LteRrcSap::AssistInfo *m_assistInfoPtr;
+  bool m_enableReordering;
 };
 
 

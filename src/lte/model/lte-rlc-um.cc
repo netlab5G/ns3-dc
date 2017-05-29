@@ -26,6 +26,10 @@
 #include "ns3/lte-rlc-sdu-status-tag.h"
 #include "ns3/lte-rlc-tag.h"
 
+#include "ns3/lte-rrc-sap.h" // woody
+#include "ns3/lte-enb-rrc.h" // woody
+#include "ns3/lte-ue-rrc.h" // woody 
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteRlcUm");
@@ -1192,6 +1196,34 @@ LteRlcUm::ExpireRbsTimer (void)
       DoReportBufferStatus ();
       m_rbsTimer = Simulator::Schedule (MilliSeconds (10), &LteRlcUm::ExpireRbsTimer, this);
     }
+}
+
+double
+LteRlcUm::GetBufferSize() // sjkang
+{
+  NS_FATAL_ERROR ("Not implemented yet");
+  return -1;
+}
+
+void
+LteRlcUm::SetAssistInfoPtr(LteRrcSap::AssistInfo* assistInfoPtr) // woody
+{
+  NS_LOG_ERROR ("Not implemented yet");
+  return;
+}
+
+void
+LteRlcUm:: IsEnbRlc (void) // woody
+{
+  NS_FATAL_ERROR ("Not implemented yet");
+  return;
+}
+
+void
+LteRlcUm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
+{
+  NS_FATAL_ERROR ("Not implemented yet");
+  return;
 }
 
 } // namespace ns3

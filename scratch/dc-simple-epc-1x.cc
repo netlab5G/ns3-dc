@@ -49,7 +49,7 @@ main (int argc, char *argv[])
   double interPacketInterval = 100;
   int log_packetflow = 1;
 
-  uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
+  uint8_t dcType = 3; // woody (0: Single Connection, 1: 1A, 2: 3C, 3:1X)
 
   // Command line arguments
   CommandLine cmd;
@@ -83,6 +83,7 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("LteEnbMac", LOG_DEBUG);
 //  LogComponentEnable ("LteRlcUm", LOG_LOGIC);
 //  LogComponentEnable ("EpcX2", LOG_FUNCTION);
+//  LogComponentEnable ("PfFfMacScheduler", LOG_FUNCTION);
  
   if (log_packetflow){
     LogComponentEnable ("LtePdcp", LOG_INFO);
@@ -92,6 +93,8 @@ main (int argc, char *argv[])
     LogComponentEnable ("PacketSink", LOG_INFO);
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
+
+  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -165,6 +168,8 @@ main (int argc, char *argv[])
   NetDeviceContainer ueLteDevs = lteHelper->InstallDcUeDevice (ueNodes); // woody
 
   lteHelper->NotifyEnbNeighbor (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
+
+  lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0), dcType); // woody, for splitting algm.
 
   // Install the IP stack on the UEs
   NS_LOG_UNCOND("# install the IP stack on the UEs");

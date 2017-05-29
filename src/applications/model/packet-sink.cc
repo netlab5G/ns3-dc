@@ -171,7 +171,7 @@ void PacketSink::HandleRead (Ptr<Socket> socket)
       m_totalRx += packet->GetSize ();
       if (InetSocketAddress::IsMatchingType (from))
         {
-          NS_LOG_INFO ("****UE, " << Simulator::Now ().GetSeconds () << "s "// woody, logging
+          NS_LOG_INFO ("*UE, " << Simulator::Now ().GetSeconds () << "s "// woody, logging
                        <<  packet->GetSize () << " bytes from "
                        << InetSocketAddress::ConvertFrom(from).GetIpv4 ()
                        << " port " << InetSocketAddress::ConvertFrom (from).GetPort ()

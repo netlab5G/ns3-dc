@@ -268,8 +268,8 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
       NS_ASSERT (bidIt != rntiIt->second.end ());
       uint32_t teid = bidIt->second;
 
-      if (m_isSenb) NS_LOG_INFO ("***SeNB, " << Simulator::Now ().GetSeconds () << "s a packet UL"); // woody, for observing UL packet flow
-      else NS_LOG_INFO ("***MeNB, " << Simulator::Now ().GetSeconds () << "s a packet UL");
+      if (m_isSenb) NS_LOG_INFO ("**SeNB, " << Simulator::Now ().GetSeconds () << "s forward a packet UL"); // woody, for observing UL packet flow
+      else NS_LOG_INFO ("**MeNB, " << Simulator::Now ().GetSeconds () << "s forward a packet UL");
 
       SendToS1uSocket (packet, teid);
     }

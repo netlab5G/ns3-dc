@@ -62,6 +62,7 @@
 #include <ns3/lte-spectrum-value-helper.h>
 #include <ns3/epc-x2.h>
 #include <ns3/epc-mme.h> // woody3C
+#include <ns3/pf-ff-mac-scheduler.h> // woody
 
 namespace ns3 {
 
@@ -451,6 +452,46 @@ LteHelper::NotifyEnbNeighbor (Ptr<Node> enb, Ptr<Node> senb) // woody3C
   m_epcHelper->GetMme()->SetMenbSenbMap(enbDev->GetCellId(), senbDev->GetCellId());
 }
 
+void
+LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8_t dcType) // woody
+{
+  NS_LOG_FUNCTION (this);
+  Ptr<LteEnbNetDevice> enbDev = enb->GetDevice(0)->GetObject<LteEnbNetDevice> ();
+  Ptr<LteEnbNetDevice> senbDev = senb->GetDevice(0)->GetObject<LteEnbNetDevice> ();
+  Ptr<LteUeNetDevice> ueDev = ue->GetDevice(0)->GetObject<LteUeNetDevice> ();
+
+  Ptr<LteEnbRrc> enbRrc = enbDev->GetRrc();
+  Ptr<LteEnbRrc> senbRrc = senbDev->GetRrc();
+  Ptr<LteUeRrc> ueRrc = ueDev->GetRrc();
+  Ptr<LteUeRrc> ueRrcDc = ueDev->GetRrcDc();
+  Ptr<PfFfMacScheduler> enbPfFfMacScheduler = enbDev->GetFfMacScheduler()->GetObject<PfFfMacScheduler>();
+  Ptr<PfFfMacScheduler> senbPfFfMacScheduler = senbDev->GetFfMacScheduler()->GetObject<PfFfMacScheduler>();
+  if(!enbPfFfMacScheduler || !senbPfFfMacScheduler) NS_FATAL_ERROR ("Only PfFfMacScheduler is dealt");
+
+  Ptr<Node> pgwNode = m_epcHelper->GetPgwNode ();
+  Ptr<EpcSgwPgwApplication> pgwApp = pgwNode->GetApplication (0)->GetObject<EpcSgwPgwApplication> ();
+
+  enbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  senbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  ueRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  ueRrcDc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+//  enbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+//  senbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  enbPfFfMacScheduler->SetRrc (enbRrc);
+  senbPfFfMacScheduler->SetRrc (senbRrc);
+
+//  enbRrc->SetPfFfMacScheduler (enbPfFfMacScheduler);
+//  senbRrc->SetPfFfMacScheduler (senbPfFfMacScheduler);
+
+  if (dcType == 2){
+    enbRrc->IsAssistInfoSink (); 
+  }
+  else if (dcType == 3){
+    pgwApp->IsAssistInfoSink ();
+  }
+  else NS_FATAL_ERROR ("Unimplemented DC type");
+}
+
 Ptr<NetDevice>
 LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
 {
@@ -501,6 +542,8 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
   Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
   Ptr<LteHandoverAlgorithm> handoverAlgorithm = m_handoverAlgorithmFactory.Create<LteHandoverAlgorithm> ();
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
+
+  rrc->SetMenb(); // woody
 
   if (m_useIdealRrc)
     {
@@ -742,6 +785,7 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   dev->SetAttribute ("LteEnbRrc", PointerValue (rrc)); 
   dev->SetAttribute ("LteHandoverAlgorithm", PointerValue (handoverAlgorithm));
   dev->SetAttribute ("LteFfrAlgorithm", PointerValue (ffrAlgorithm));
+  dev->SetAttribute ("DlEarfcn", UintegerValue (1000)); //DlEarfcn for SeNB, sychoi
 
   if (m_isAnrEnabled)
     {
@@ -762,6 +806,7 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   rrc->SetForwardUpCallback (MakeCallback (&LteEnbNetDevice::Receive, dev));
 
   NS_LOG_LOGIC ("set the propagation model frequencies");
+
   double dlFreq = LteSpectrumValueHelper::GetCarrierFrequency (dev->GetDlEarfcn ());
   NS_LOG_LOGIC ("DL freq: " << dlFreq);
   bool dlFreqOk = m_downlinkPathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (dlFreq));
@@ -1228,8 +1273,8 @@ LteHelper::AttachDc (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice, Ptr<EpcT
   Ptr<LteEnbNetDevice> enbLteDevice = enbDevice->GetObject<LteEnbNetDevice> ();
 
   Ptr<EpcUeNas> ueNas = ueLteDevice->GetNas ();
-  ueNas->ConnectDc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ());
 
+  ueNas->ConnectDc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ()); //sychoi
   if (m_epcHelper != 0)
     {
       // activate default EPS bearer

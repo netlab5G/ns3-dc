@@ -130,6 +130,7 @@ TcpNewReno::SlowStart (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
     {
       tcb->m_cWnd += tcb->m_segmentSize;
       NS_LOG_INFO ("In SlowStart, updated to cwnd " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << tcb->m_ssThresh << " m_cWnd " << tcb->m_cWnd << " SlowStart");
       return segmentsAcked - 1;
     }
 
@@ -157,6 +158,7 @@ TcpNewReno::CongestionAvoidance (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked
       tcb->m_cWnd += static_cast<uint32_t> (adder);
       NS_LOG_INFO ("In CongAvoid, updated to cwnd " << tcb->m_cWnd <<
                    " ssthresh " << tcb->m_ssThresh);
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << tcb->m_ssThresh << " m_cWnd " << tcb->m_cWnd << " CongestionAvoidance");
     }
 }
 

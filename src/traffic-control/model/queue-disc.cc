@@ -26,6 +26,7 @@
 #include "ns3/socket.h"
 #include "ns3/unused.h"
 #include "queue-disc.h"
+#include "ns3/simulator.h" // woody
 
 namespace ns3 {
 
@@ -411,6 +412,7 @@ void
 QueueDisc::Drop (Ptr<QueueItem> item)
 {
   NS_LOG_FUNCTION (this << item);
+NS_LOG_INFO("Dropping a packet in queue at " << Simulator::Now().GetSeconds()); // woody
 
   // if the wake mode of this queue disc is WAKE_CHILD, packets are directly
   // enqueued/dequeued from the child queue discs, thus this queue disc does not

@@ -24,11 +24,6 @@
 #include <ns3/event-id.h>
 #include <ns3/lte-rlc-sequence-number.h>
 #include <ns3/lte-rlc.h>
-#include "ns3/codel-queue-disc.h"
-
-#include "ns3/lte-rrc-sap.h" // woody
-#include "ns3/lte-enb-rrc.h" // woody
-#include "ns3/lte-ue-rrc.h" // woody
 
 #include <vector>
 #include <map>
@@ -56,31 +51,9 @@ public:
    */
   virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void DoNotifyHarqDeliveryFailure ();
-  virtual void DoNotifyDlHarqDeliveryFailure (uint8_t harqId);
-  virtual void DoNotifyUlHarqDeliveryFailure (uint8_t harqId);
   virtual void DoReceivePdu (Ptr<Packet> p);
 
-  // sjkang
-  virtual double GetBufferSize();
-  void GetReportBufferStatus( LteMacSapProvider::ReportBufferStatusParameters r);
-  int count=0, sum;
-  int p;
-  double averageBufferSize;
-  Time SamplingTime;
-  uint32_t ArrayInMovingWindow[11];
-
-  // woody
-  virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
-  virtual void IsEnbRlc (void);
-  virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc);
-
 private:
-  // woody
-  LteRrcSap::AssistInfo *m_assistInfoPtr;
-  bool m_isEnbRlc;
-  Ptr<LteEnbRrc> m_enbRrc;
-  Ptr<LteUeRrc> m_ueRrc;
-
   /**
    * This method will schedule a timeout at WaitReplyTimeout interval
    * in the future, unless a timer is already running for the cache,
@@ -107,7 +80,6 @@ private:
 
 private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
-    Ptr<CoDelQueueDisc> m_txonQueue; //the packets comming from PDCP first stored in this queue and move to m_txonBuffer during transmission.
 
     struct RetxPdu
     {
@@ -115,18 +87,10 @@ private:
       uint16_t    m_retxCount;
     };
 
-    struct RetxSegPdu
-		{
-			Ptr<Packet> m_pdu;
-			uint16_t    m_retxCount;
-			bool			m_lastSegSent;		// all segments sent, waiting for ACK
-		};
-
   std::vector <RetxPdu> m_txedBuffer;  ///< Buffer for transmitted and retransmitted PDUs 
                                        ///< that have not been acked but are not considered 
                                        ///< for retransmission 
   std::vector <RetxPdu> m_retxBuffer;  ///< Buffer for PDUs considered for retransmission
-  std::vector <RetxSegPdu> m_retxSegBuffer;  // buffer for AM PDU segments
 
     uint32_t m_txonBufferSize;
     uint32_t m_retxBufferSize;
@@ -215,10 +179,6 @@ private:
    */
   SequenceNumber10 m_expectedSeqNumber;
 
-  std::map <uint8_t, uint16_t> m_harqIdToSnMap;
-
-  uint32_t m_maxTxBufferSize;
-  bool m_enableAqm;
 };
 
 

@@ -1142,6 +1142,29 @@ LteUeRrc::SetLteRlcSapUserDc (uint8_t i, LteRlcSapUser* p){ // woody3C
   m_bid2RlcSapUserMapDc[i] = p;
 }
 
+void
+LteUeRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType){ // woody
+  NS_LOG_FUNCTION (this);
+
+  if (dcType == 2){
+    m_assistInfoSinkEnb = enbRrc;
+  }
+  else if (dcType == 3){
+    m_assistInfoSinkPgw = pgwApp;
+  }
+  else NS_FATAL_ERROR ("Unimplemented DC type");
+}
+
+void
+LteUeRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
+  NS_LOG_FUNCTION (this);
+  static const Time delay = MilliSeconds (0);
+  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
+
+  if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
+  else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);
+}
+
 void 
 LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedicated rrcd)
 {
@@ -1282,19 +1305,26 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
               pdcp->SetLtePdcpSapUser (m_drbPdcpSapUser);
               pdcp->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ());
 
-              if (m_isDc){ // woody3C
-	        std::map<uint8_t, LteRlcSapUser*>::iterator itRlc = m_bid2RlcSapUserMapDc.find (drbInfo->m_drbIdentity);
-                if (itRlc == m_bid2RlcSapUserMapDc.end()){
-		  m_rrcDc->SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
-		  SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
+              // woody
+//NS_LOG_UNCOND(" Set signaling in UE: bearerId " << (uint32_t) dtamIt->drbIdentity  << " this " << this <<  " &m_assistInfo " << &m_assistInfo << " m_assistInfoSink " << m_assistInfoSink);
+              m_assistInfo.bearerId = dtamIt->drbIdentity;
+              m_assistInfo.is_enb = false;
 
-                  rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
-                }
-                else{
-                  rlc->SetLteRlcSapUser (itRlc->second);
-                }
+              pdcp->m_ueRrc = this;
+              pdcp->SetAssistInfoPtr(&m_assistInfo);
+              rlc->SetRrc(0, this);
+              rlc->SetAssistInfoPtr(&m_assistInfo);
+
+	      std::map<uint8_t, LteRlcSapUser*>::iterator itRlc = m_bid2RlcSapUserMapDc.find (drbInfo->m_drbIdentity);
+              if (itRlc == m_bid2RlcSapUserMapDc.end()){
+		m_rrcDc->SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
+		SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
+
+                rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
               }
-	      else rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
+              else{
+                rlc->SetLteRlcSapUser (itRlc->second);
+              }
 
 //	      if(m_rlcSapUserDc){
 //                rlc->SetLteRlcSapUser (m_rlcSapUserDc);

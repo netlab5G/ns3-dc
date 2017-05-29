@@ -29,7 +29,9 @@
 #include <ns3/boolean.h>
 #include <cfloat>
 #include <set>
+#include<fstream>
 
+#include <ns3/lte-enb-rrc.h> // woody
 
 namespace ns3 {
 
@@ -1387,6 +1389,7 @@ PfFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
       (*itStats).second.lastAveragedThroughput = ((1.0 - (1.0 / m_timeWindow)) * (*itStats).second.lastAveragedThroughput) + ((1.0 / m_timeWindow) * (double)((*itStats).second.lastTtiBytesTrasmitted / 0.001));
       NS_LOG_INFO (this << " UE total bytes " << (*itStats).second.totalBytesTransmitted);
       NS_LOG_INFO (this << " UE average throughput " << (*itStats).second.lastAveragedThroughput);
+      GetPfsFlowPerf_t(itStats);
       (*itStats).second.lastTtiBytesTrasmitted = 0;
     }
 
@@ -2287,5 +2290,61 @@ PfFfMacScheduler::TransmissionModeConfigurationUpdate (uint16_t rnti, uint8_t tx
   m_cschedSapUser->CschedUeConfigUpdateInd (params);
 }
 
+void
+PfFfMacScheduler::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
+  NS_LOG_FUNCTION (this);
 
+  if(m_assistInfoPtr == NULL)
+  {
+    m_assistInfoPtr = m_rrc->GetAssistInfoPtr ();
+    if (m_assistInfoPtr == NULL) return;
+  }
+  m_assistInfoPtr->averageThroughput = m_assistInfo.averageThroughput;
+  m_rrc->SendAssistInfo (*m_assistInfoPtr);
+}
+
+void
+PfFfMacScheduler::SetRrc (Ptr<LteEnbRrc> enbRrc){ // woody
+  m_rrc = enbRrc;
+}
+
+/// sjkang
+std::ofstream OutFileOfEnb1Schedule("enb1_AverageThroughput.txt");
+std::ofstream OutFileOfEnb2Schedule("enb2_AverageThroughput.txt");
+int ccc=0;
+Ptr<PfFfMacScheduler> SchedulerAddressOfEnb1, SchedulerAddressOfEnb2;
+void
+PfFfMacScheduler::GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator itStats){
+
+	  if (ccc ==0)
+	  {
+
+	    ccc =1;
+	    SchedulerAddressOfEnb1=this;
+	  }
+
+	  if(ccc==1 && SchedulerAddressOfEnb1 != this)
+	  {
+	    SchedulerAddressOfEnb2= this;
+	    ccc=2;
+	  }
+	  m_assistInfo.averageThroughput =(*itStats).second.lastAveragedThroughput;
+          SendAssistInfo(m_assistInfo);
+
+	  if(this== SchedulerAddressOfEnb1)
+		  OutFileOfEnb1Schedule << this<< "\t" << Simulator::Now().GetSeconds() << "\t"
+		  << "averageThroughput(byte)"<< "\t"<<
+     		  (*itStats).second.lastAveragedThroughput << std::endl;
+	  if(this== SchedulerAddressOfEnb2)
+		  OutFileOfEnb2Schedule << this << "\t"<< Simulator::Now().GetSeconds() << "\t"
+		  << "averageThroughput(byte)"<< "\t"<<
+		  (*itStats).second.lastAveragedThroughput << std::endl;
+	 // LteRrcSap::AssistInfo AverageThoughputInfo;
+	 // AverageThoughputInfo.lastAveragedThroughput = (*itStats).second.lastAveragedThroughput;
+	  //if(isRRC)
+          // enb_rrc->SendAssistInfo(AverageThoughputInfo);
+
+ //std::cout << this <<  "\t " << (*itStats).second.indicatorToUlandDl << "  " <<
+	//	 (*itStats).second.lastAveragedThroughput << std::endl;
+}
 }

@@ -31,6 +31,10 @@
 #include <ns3/lte-amc.h>
 #include <ns3/lte-ffr-sap.h>
 
+#include "ns3/lte-enb-rrc.h" // woody
+#include <ns3/epc-sgw-pgw-application.h> // woody
+#include <ns3/lte-rrc-sap.h> // woody
+
 // value for SINR outside the range defined by FF-API, used to indicate that there
 // is no CQI for this element
 #define NO_SINR -5000
@@ -102,7 +106,16 @@ public:
 
   void TransmissionModeConfigurationUpdate (uint16_t rnti, uint8_t txMode);
 
+  void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+  void SetRrc (Ptr<LteEnbRrc> enbRrc); // woody
+
+  void GetPfsFlowPerf_t(std::map <uint16_t, pfsFlowPerf_t>::iterator itStats); //sjkang
 private:
+
+  Ptr<LteEnbRrc> m_rrc; // woody
+  LteRrcSap::AssistInfo m_assistInfo; // woody
+  LteRrcSap::AssistInfo *m_assistInfoPtr; // woody
+
   //
   // Implementation of the CSCHED API primitives
   // (See 4.1 for description of the primitives)

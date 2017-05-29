@@ -95,13 +95,13 @@ TypeId LteEnbNetDevice::GetTypeId (void)
                    MakePointerChecker <LteEnbPhy> ())
     .AddAttribute ("UlBandwidth",
                    "Uplink Transmission Bandwidth Configuration in number of Resource Blocks",
-                   UintegerValue (25),
+                   UintegerValue (100),
                    MakeUintegerAccessor (&LteEnbNetDevice::SetUlBandwidth, 
                                          &LteEnbNetDevice::GetUlBandwidth),
                    MakeUintegerChecker<uint8_t> ())
     .AddAttribute ("DlBandwidth",
                    "Downlink Transmission Bandwidth Configuration in number of Resource Blocks",
-                   UintegerValue (25),
+                   UintegerValue (100),
                    MakeUintegerAccessor (&LteEnbNetDevice::SetDlBandwidth, 
                                          &LteEnbNetDevice::GetDlBandwidth),
                    MakeUintegerChecker<uint8_t> ())
@@ -185,7 +185,11 @@ LteEnbNetDevice::DoDispose ()
   LteNetDevice::DoDispose ();
 }
 
-
+Ptr<FfMacScheduler>
+LteEnbNetDevice::GetFfMacScheduler () // woody
+{
+  return m_scheduler;
+}
 
 Ptr<LteEnbMac>
 LteEnbNetDevice::GetMac () const

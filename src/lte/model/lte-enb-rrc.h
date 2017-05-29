@@ -40,6 +40,7 @@
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/lte-anr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
+#include <ns3/epc-sgw-pgw-application.h> // woody
 
 #include <map>
 #include <set>
@@ -107,6 +108,13 @@ protected:
 public: 
   static TypeId GetTypeId (void);
 
+    double etha_AtMenbFromDelay, etha_AtSenbFromDelay; //sjkang
+    double etha_AtMenbFrom_Thr_,etha_AtSenbFrom_Thr_; //sjkang
+    const double targetDelay = 0.2; //sjkang
+    double pastEthaAtMenb, pastEthaAtSenb;
+    void UpdateEthas(); //sjkang
+	 double sigma = 0.001; //sjkang
+	double alpha =1/99.0; //sjkang
   /** 
    * Set the identifiers of the source eNB for the case where a UE
    * joins the current eNB as part of a handover procedure 
@@ -323,10 +331,18 @@ public:
 
   void SetDcCell (uint16_t dcCell); // woody3C
 
+  LteRrcSap::AssistInfo m_assistInfo; // woody
+
+  void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+
+  int SplitAlgorithm (); // woody
+
 private:
 
   uint16_t m_dcCell; // woody3C
   uint8_t m_currentBid; // woody3C
+  uint16_t m_splitAlgorithm; // woody
+  int m_lastDirection;
 
   /** 
    * Add a new LteDataRadioBearerInfo structure to the UeManager
@@ -546,6 +562,19 @@ protected:
   virtual void DoDispose (void);
 public:
   static TypeId GetTypeId (void);
+
+  void SetMenb (); // woody
+
+  void SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pgwApp, uint8_t dcType); // woody
+  void IsAssistInfoSink (); // woody
+
+  void SendAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+  void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
+
+  LteRrcSap::AssistInfo* GetAssistInfoPtr (); // woody
+  void SetAssistInfoPtr (LteRrcSap::AssistInfo *assistInfo); // woody
+  LteRrcSap::AssistInfo *m_assistInfoPtr; // woody
+
 
 
   /**
@@ -876,6 +905,12 @@ public:
   
 private:
 
+  bool m_isMenb; // woody
+
+  Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
+  Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
+
+  bool m_isAssistInfoSink; // woody
 
   // RRC SAP methods
 

@@ -70,16 +70,15 @@ public:
   uint32_t ArrayInMovingWindow[11];
 
   // woody
-  virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
-  virtual void IsEnbRlc (void);
-  virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc);
+  void SetAssistInfoPtr (LteRrcSap::AssistInfo* assisInfoPtr);
+  void IsEnbRlc (void);
+  Ptr<LteEnbRrc> m_enbRrc;
+  Ptr<LteUeRrc> m_ueRrc;
 
 private:
   // woody
-  LteRrcSap::AssistInfo *m_assistInfoPtr;
   bool m_isEnbRlc;
-  Ptr<LteEnbRrc> m_enbRrc;
-  Ptr<LteUeRrc> m_ueRrc;
+  LteRrcSap::AssistInfo *m_assistInfoPtr;
 
   /**
    * This method will schedule a timeout at WaitReplyTimeout interval
