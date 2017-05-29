@@ -35,9 +35,6 @@
 #include <iostream>
 #include <string>
 
-///#include "ns3/lte-pdcp.h"
-//#include "ns3/gtk-config-store.h"
-
 using namespace ns3;
 
 /**
@@ -198,52 +195,81 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
 }
 
+Ptr<PacketSink> sink;
+uint64_t lastTotalRx = 0;
+std::ofstream *streamThroughput;
+
+void
+CalculateThroughput ()
+{
+  Time now = Simulator::Now ();                                         /* Return the simulator's virtual time. */
+  double cur = (sink->GetTotalRx () - lastTotalRx) * (double) 8 / 1e5;     /* Convert Application RX Packets to MBits. */
+  *streamThroughput  << now.GetSeconds () << "\t" << cur << " Mbit/s" << std::endl;
+  lastTotalRx = sink->GetTotalRx ();
+  Simulator::Schedule (MilliSeconds (100), &CalculateThroughput);
+}
+
+void
+ChangeSpeed(Ptr<Node>  n, Vector speed)
+{
+	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
+}
+
 int
 main (int argc, char *argv[])
 {
-  double simTime = 15.0;
+  // default values
+  double simTime = 10.0; // total duration of simulation (s)
   double startTime =1.0;
-  int log_packetflow = 0;
-  uint8_t dcType = 2; // woody (0: Single Connection, 1: 1A, 2: 3C)
-  uint16_t pdcpReorderingTimer = 20;
+  bool log_packetflow = true; // enabling log module for packet tracing
+  int dcType_t = 2; // Dual connectivity type (0:Single Connection, 1:1A, 2:3C, 3:1X)
+  int pdcpReorderingTimer_t = 100; // PDCP packet reordering timer (ms)
+  int x2LinkDelay = 0;
+  bool enablePDCPReordering = true; // enabling PDCP packet reordering function
+  uint16_t downlinkRb = 100;
+  double distance = 200.0; // distance between MeNB and SeNB
+  double velocity = 5.0; // velocity of UE
+  bool isTcp = false; // true:TCP, false:UDP
+  int splitAlgorithm_t = 2; // choose split algorithm among the list below
+/*
+--Split Algorithm List--
+ 0: MeNB only
+ 1: SeNB only
+ 2: alternative splitting
+ 3: Proposed V1
+*/
+
   std::string outputName;
+  uint8_t dcType;
+  uint16_t  pdcpReorderingTimer, splitAlgorithm;
 
   CommandLine cmd;
   cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
-  cmd.AddValue("pdcpReorderingTimer", "PDCP reordering timer [ms])", pdcpReorderingTimer);
-  cmd.AddValue("outputName", "Output file name", outputName);
+  cmd.AddValue("pdcpReorderingTimer", "PDCP reordering timer [ms])", pdcpReorderingTimer_t);
+  cmd.AddValue("outputName", "Output file namei prefix", outputName);
+  cmd.AddValue("splitAlgorithm", "Selecting splitting algorithm", splitAlgorithm_t);
+  cmd.AddValue("dcType", "Select DC Type", dcType_t);
+  cmd.AddValue("x2LinkDelay", "X2 interface link delay", x2LinkDelay);
   cmd.Parse(argc, argv);
+
+  dcType = (unsigned) dcType_t;
+  pdcpReorderingTimer = (unsigned) pdcpReorderingTimer_t;
+  splitAlgorithm = (unsigned) splitAlgorithm_t;
+
+  NS_LOG_UNCOND("Simulation Setting");
+  NS_LOG_UNCOND(" -simTime(s) = " << simTime);
+  NS_LOG_UNCOND(" -App = TCP");
+  NS_LOG_UNCOND(" -dcType = " << (unsigned) dcType);
+  NS_LOG_UNCOND(" -splitAlgorithm = " << (unsigned) splitAlgorithm);
+  NS_LOG_UNCOND(" -pdcpReorderingTimer(ms) = " << (unsigned) pdcpReorderingTimer);
+  NS_LOG_UNCOND(" -x2LinkDelay(ms) = " << x2LinkDelay);
 
 //  LogComponentEnable ("LteHelper", LOG_FUNCTION);
 //  LogComponentEnable ("PointToPointEpcHelper", LOG_FUNCTION);
 //  LogComponentEnable ("EpcEnbApplication", LOG_FUNCTION);
 //  LogComponentEnable ("EpcSgwPgwApplication", LOG_FUNCTION);
 
-//  LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
-//  LogComponentEnable ("LteRlc", LOG_FUNCTION);
-//  LogComponentEnable ("LteRlcAm", LOG_FUNCTION);
-//  LogComponentEnable ("LteRlcUm", LOG_FUNCTION);
-//  LogComponentEnable ("LtePdcp", LOG_FUNCTION);
-//  LogComponentEnable ("EpcMme", LOG_FUNCTION);
-//  LogComponentEnable ("EpcUeNas", LOG_FUNCTION);
-//  LogComponentEnable ("LteEnbRrc", LOG_FUNCTION);
-//  LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
-//  LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
-//  LogComponentEnable ("LteRrcProtocolIdeal", LOG_FUNCTION);
-//  LogComponentEnable ("LteEnbNetDevice", LOG_FUNCTION);
-//  LogComponentEnable ("LteUeMac", LOG_FUNCTION);
-//  LogComponentEnable ("LteUePhy", LOG_FUNCTION);
-//  LogComponentEnable ("EpcTftClassifier", LOG_FUNCTION);
-//  LogComponentEnable ("EpcTft", LOG_FUNCTION);
-//  LogComponentEnable ("FfMacScheduler", LOG_FUNCTION);
-//  LogComponentEnable ("LteEnbMac", LOG_DEBUG);
-//  LogComponentEnable ("LteRlcUm", LOG_LOGIC);
-//  LogComponentEnable ("EpcX2", LOG_FUNCTION);
-//  LogComponentEnable ("TcpSocketBase", LOG_FUNCTION);
-//  LogComponentEnable ("TcpSocketBase", LOG_DEBUG);
-
   if (log_packetflow){
-    LogComponentEnable ("LtePdcp", LOG_INFO);
     LogComponentEnable ("EpcEnbApplication", LOG_INFO);
     LogComponentEnable ("EpcSgwPgwApplication", LOG_INFO);
     LogComponentEnable ("LteEnbRrc", LOG_INFO);
@@ -251,8 +277,31 @@ main (int argc, char *argv[])
     LogComponentEnable ("UdpClient", LOG_INFO);
   }
 
-  Config::SetDefault("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
-  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
+  // Logging CoDel queue packet drop
+  LogComponentEnable ("QueueDisc", LOG_INFO);
+
+  // Logging PDCP packet discarding and PDCP reordering timer operation
+  LogComponentEnable ("LtePdcp", LOG_INFO);
+
+  // These attributes need to be checked before simulation
+  Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
+  Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
+  Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
+
+  // These would be used as default in most cases
+  if(isTcp)
+  {
+    Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
+    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
+    Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (enablePDCPReordering));
+    Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
+  }
+  else
+  {
+    Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_UM_ALWAYS));
+  }
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
   Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (1000));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
@@ -262,14 +311,16 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
   Ptr<PointToPointEpcHelper>  epcHelper = CreateObject<PointToPointEpcHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
-
-//  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
-//  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
+  lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::LogDistancePropagationLossModel"));
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
@@ -277,6 +328,8 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
+
+  pgw->GetApplication (0) -> GetObject<EpcSgwPgwApplication> () -> SetSplitAlgorithm(splitAlgorithm); // woody
 
    // Create a single RemoteHost
   NS_LOG_UNCOND("# Create a remote host");
@@ -314,28 +367,21 @@ main (int argc, char *argv[])
 
   // Install Mobility Model
   NS_LOG_UNCOND("# Mobility set up");
-  lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::LogDistancePropagationLossModel"));
+  Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
+  enbPositionAlloc->Add (Vector (distance, 0.0, 0.0)); //for MeNB
+  enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0)); //for SeNB
+  MobilityHelper enbMobility;
+  enbMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  enbMobility.SetPositionAllocator(enbPositionAlloc);
+  enbMobility.Install (enbNodes);
+  enbMobility.Install (senbNodes);
 
-  Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
-  positionAlloc->Add (Vector(0, 0, 0)); // for LTE MeNB
-  positionAlloc->Add (Vector(100, 0, 0)); // for LTE SeNB
-//  positionAlloc->Add (Vector(0, 0, 0)); // for LTE UE
-
-  MobilityHelper mobility;
-  mobility.SetPositionAllocator (positionAlloc);
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility.Install (enbNodes);
-  mobility.Install (senbNodes);
-//  mobility.Install (ueNodes);
-
-  Ptr<ListPositionAllocator> positionAlloc_velocity = CreateObject<ListPositionAllocator> ();
-  positionAlloc_velocity->Add (Vector(0,0,0));
-  
-  MobilityHelper mobility_velocity;
-  mobility_velocity.SetPositionAllocator (positionAlloc_velocity);
-  mobility_velocity.SetMobilityModel ("Ns3::ConstantVelocityMobilityModel");
-  mobility_velocity.Install (ueNodes);
-  ueNodes.Get(0)->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(Vector(5.0, 0, 0));
+  MobilityHelper ueMobility;
+  ueMobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+  ueMobility.Install (ueNodes);
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (distance/2, 0, 0));
+  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
+  Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (velocity, 0, 0));
 
   // Install LTE Devices to the nodes
   NS_LOG_UNCOND("# Install LTE device to the nodes");
@@ -345,7 +391,7 @@ main (int argc, char *argv[])
 
   lteHelper->NotifyEnbNeighbor (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
 
-  lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0), dcType); // woody, for splitting algm.
+  lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0), dcType); // woody
 
   // Install the IP stack on the UEs
   NS_LOG_UNCOND("# install the IP stack on the UEs");
@@ -373,52 +419,84 @@ main (int argc, char *argv[])
 
   lteHelper->Attach (ueLteDevs.Get(0), enbLteDevs.Get(0));
   lteHelper->AttachDc (ueLteDevs.Get(0), senbLteDevs.Get(0), tftDc, dcType); // woody, woody3C
-  // side effect: the default EPS bearer will be activated
 
   // Add X2 interface
   lteHelper->AddX2Interface (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
 
   // Install and start applications on UEs and remote host
-  // woody, DL only
   NS_LOG_UNCOND("# Install applications");
-  ApplicationContainer serverApps;
-  PacketSinkHelper tcpPacketSinkHelperDc ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPortDc));
-  serverApps = tcpPacketSinkHelperDc.Install (ueNodes.Get(0));
+  if(isTcp)
+  {
+    Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
+    PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPortDc));
+    ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
 
-  Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
-  Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
-  Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1360, 5000000, DataRate ("300Mbps"));
-  remoteHost->AddApplication (app);
+    sinkApps.Start (Seconds (0.));
+    sinkApps.Stop (Seconds (simTime));
 
-  app->SetStartTime (Seconds (startTime));
-  serverApps.Start (Seconds (startTime));
+    Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
+    Ptr<MyApp> app = CreateObject<MyApp> ();
+    app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("300Mb/s"));
+
+    remoteHostContainer.Get (0)->AddApplication (app);
+
+    AsciiTraceHelper asciiTraceHelper;
+    Ptr<OutputStreamWrapper> stream_packet_size = asciiTraceHelper.CreateFileStream (outputName + "_packet_size.txt");
+    sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream_packet_size));
+
+    Ptr<OutputStreamWrapper> stream_rtt = asciiTraceHelper.CreateFileStream (outputName + "_rtt.txt");
+    ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream_rtt));
+
+    Ptr<OutputStreamWrapper> stream_cwnd = asciiTraceHelper.CreateFileStream (outputName + "_tcp_cwnd.txt");
+    ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream_cwnd));
+
+    streamThroughput = new std::ofstream(outputName + "_throughput.txt");
+    Simulator::Schedule (Seconds (startTime), &CalculateThroughput);
+
+    //Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
+    //ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
+    app->SetStartTime (Seconds (startTime));
+    app->SetStopTime (Seconds (simTime));
+
+    sink = sinkApps.Get (0)->GetObject<PacketSink> ();
+  }
+  else
+  {
+    Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPortDc));
+    PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPortDc));
+    ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
+
+    sinkApps.Start (Seconds (0.));
+    sinkApps.Stop (Seconds (simTime));
+
+    Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
+    Ptr<MyApp> app = CreateObject<MyApp> ();
+    app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("100Mb/s"));
+
+    remoteHostContainer.Get (0)->AddApplication (app);
+    AsciiTraceHelper asciiTraceHelper;
+    Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream (outputName + "_udp_data.txt");
+    sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
+
+    app->SetStartTime (Seconds (startTime));
+    app->SetStopTime (Seconds (simTime));
+  
+    sink = sinkApps.Get (0)->GetObject<PacketSink> ();
+  }
 
 //  lteHelper->EnableTraces ();
 
   // Uncomment to enable PCAP tracing
 //  p2ph.EnablePcapAll("dc-tcp");
 
-  AsciiTraceHelper asciiTraceHelper;
-  Ptr<OutputStreamWrapper> stream_packet_size = asciiTraceHelper.CreateFileStream (outputName + "_packet_size.txt");
-  serverApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream_packet_size));
-
-  Ptr<OutputStreamWrapper> stream_rtt = asciiTraceHelper.CreateFileStream (outputName + "_rtt.txt");
-  ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream_rtt));
-
-  Ptr<OutputStreamWrapper> stream_cwnd = asciiTraceHelper.CreateFileStream (outputName + "_tcp_cwnd.txt");
-  ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream_cwnd));
-
-  app->SetStopTime(Seconds(simTime));
   Simulator::Stop(Seconds(simTime+0.5));
 
   NS_LOG_UNCOND("# Run simulation");
   Simulator::Run();
-  Ptr<PacketSink> sink = serverApps.Get (0)->GetObject<PacketSink> ();
 
   double lteThroughput = sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - startTime));
   NS_LOG_UNCOND ("LastPacket " << packetRxTime << " TotalFlow " << sumPacketSize << "Mb");
-  NS_LOG_UNCOND ("UE(" << ueIpIface.GetAddress(0) <<") LteThroughput: " << lteThroughput << "Mbps");
+  NS_LOG_UNCOND ("UE(" << ueIpIface.GetAddress(0) <<") AverageLteThroughput: " << lteThroughput << "Mbps");
 
   Simulator::Destroy();
   std::ofstream output(outputName + ".txt", std::ios::app);

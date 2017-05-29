@@ -206,11 +206,15 @@ EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t ims
         bearerContext.dcType = bit->dcType; dcType = bit->dcType;// woody
         msg.bearerContextsToBeCreated.push_back (bearerContext);
       }
-    if (dcType == 0 || dcType == 1 || dcType == 3){
+    if (dcType == 0 || dcType == 1){
       msg. uli.gci = gci;
     }
     else if (dcType == 2){
       msg. uli.gci = m_SenbMenbMap[gci]; // woody3C
+    }
+    else if (dcType == 3){
+      msg. uli.gci = gci;
+      msg. isSenb = 1;
     }
     else {NS_FATAL_ERROR ("unimplemented DC type");}
   }

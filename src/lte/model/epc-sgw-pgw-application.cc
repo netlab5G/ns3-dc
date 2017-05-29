@@ -404,11 +404,18 @@ EpcSgwPgwApplication::DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequest
           m_dcEnbAddrByTeidMap[teid] = enbAddr;
       }
       else if(bit->dcType == 3) {  // woody1X
-          NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
-          NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
-          ueit->second->SetEnbAddr (enbAddr);
-          ueit->second->SetSenbAddr (enbAddr); // woody, actually SetSenbAddr is currently not utilized
-          m_dcEnbAddrByTeidMap[teid] = enbAddr;
+          if (req.isSenb == 1)
+          {
+            NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+            ueit->second->SetSenbAddr (enbAddr); // woody, actually SetSenbAddr is currently not utilized
+            m_dcEnbAddrByTeidMap[teid] = enbAddr;
+ 
+          }
+          else
+          {
+            NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+            ueit->second->SetEnbAddr (enbAddr);
+          }
       }
       else {
           NS_FATAL_ERROR("unimplemented DC type");

@@ -175,7 +175,8 @@ public:
   {
     uint64_t imsi; 
     Uli uli; 
-    std::list<BearerContextToBeCreated> bearerContextsToBeCreated;    
+    std::list<BearerContextToBeCreated> bearerContextsToBeCreated;
+    uint8_t isSenb; // woody1X
   };
 
   /** 

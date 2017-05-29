@@ -215,6 +215,7 @@ private:
   // woody
   bool m_isEnbPdcp;
   LteRrcSap::AssistInfo *m_assistInfoPtr;
+  bool m_enableReordering;
 };
 
 

@@ -81,11 +81,13 @@ LtePdcp::LtePdcp ()
   m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<LtePdcp> (this);
   m_rlcSapUser = new LtePdcpSpecificLteRlcSapUser (this);
   Last_Submitted_PDCP_RX_SN = -1;
- receivedPDCP_SN =0;
- Next_PDCP_RX_SN =0;
-Reordering_PDCP_RX_COUNT =0;
-k=0;
-check =false;
+
+  // sjkang
+  receivedPDCP_SN =0;
+  Next_PDCP_RX_SN =0;
+  Reordering_PDCP_RX_COUNT =0;
+  k=0;
+  check =false;
   m_isEnbPdcp =false; // woody
 }
 
@@ -113,6 +115,11 @@ LtePdcp::GetTypeId (void)
                      "PDU received.",
                      MakeTraceSourceAccessor (&LtePdcp::m_rxPdu),
                      "ns3::LtePdcp::PduRxTracedCallback")
+    .AddAttribute ("EnablePDCPReordering",
+                   "Enable PDCP Reordering function",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&LtePdcp::m_enableReordering),
+                   MakeBooleanChecker ())
     ;
   return tid;
 }
@@ -265,7 +272,7 @@ void
 LtePdcp::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
-  if (m_isEnbPdcp == 1){
+  if (m_isEnbPdcp == 1 || m_enableReordering == false){
     PdcpTag pdcpTag;
     Time delay;
 
@@ -455,7 +462,7 @@ NS_LOG_UNCOND(it->first);
 void
 LtePdcp::t_ReordringTimer_Expired(){ // sjkang
   NS_LOG_FUNCTION (this);
-NS_LOG_UNCOND("PDCP Reordering Timer Expired at " << Simulator::Now().GetSeconds() << " Reordering_PDCP_RX_COUNT " << Reordering_PDCP_RX_COUNT);
+NS_LOG_INFO("PDCP Reordering Timer Expired at " << Simulator::Now().GetSeconds() << " Reordering_PDCP_RX_COUNT " << Reordering_PDCP_RX_COUNT);
 
   uint16_t nextPDCP_SN;
   bool compareFlag = false;
