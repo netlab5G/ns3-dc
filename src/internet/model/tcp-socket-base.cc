@@ -1205,6 +1205,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
   if (bytesRemoved == 0 || bytesRemoved > 60)
     {
       NS_LOG_ERROR ("Bytes removed: " << bytesRemoved << " invalid");
+//NS_LOG_UNCOND ("Bytes removed: " << bytesRemoved << " invalid");
       return; // Discard invalid packet
     }
   else if (packet->GetSize () > 0 && OutOfRange (seq, seq + packet->GetSize ()))
@@ -1215,6 +1216,11 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
                     ":" << seq + packet->GetSize () <<
                     ") out of range [" << m_rxBuffer->NextRxSequence () << ":" <<
                     m_rxBuffer->MaxRxSequence () << ")");
+//NS_LOG_UNCOND ("At state " << TcpStateName[m_state] <<
+//                    " received packet of seq [" << seq <<
+//                    ":" << seq + packet->GetSize () <<
+//                    ") out of range [" << m_rxBuffer->NextRxSequence () << ":" <<
+//                    m_rxBuffer->MaxRxSequence () << ")");
       // Acknowledgement should be sent for all unacceptable packets (RFC793, p.69)
       if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
         {
@@ -1256,6 +1262,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Initialize cWnd and ssThresh
       m_tcb->m_cWnd = GetInitialCwnd () * GetSegSize ();
       m_tcb->m_ssThresh = GetInitialSSThresh ();
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd << " Initial");
 
       if (tcpHeader.GetFlags () & TcpHeader::ACK)
         {
@@ -1460,10 +1467,12 @@ TcpSocketBase::FastRetransmit ()
   m_recover = m_tcb->m_highTxMark;
   m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_RECOVERY);
   m_tcb->m_congState = TcpSocketState::CA_RECOVERY;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " -> CA_RECOVERY, fast retransmit");
 
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb,
                                                         BytesInFlight ());
   m_tcb->m_cWnd = m_tcb->m_ssThresh + m_dupAckCount * m_tcb->m_segmentSize;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd << " BytesInFlight " << BytesInFlight());
 
   NS_LOG_INFO (m_dupAckCount << " dupack. Enter fast recovery mode." <<
                "Reset cwnd to " << m_tcb->m_cWnd << ", ssthresh to " <<
@@ -1485,6 +1494,7 @@ TcpSocketBase::DupAck ()
 
       m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_DISORDER);
       m_tcb->m_congState = TcpSocketState::CA_DISORDER;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " -> CA_DISORDER, DupAck");
 
       NS_LOG_DEBUG ("OPEN -> DISORDER");
     }
@@ -1507,6 +1517,7 @@ TcpSocketBase::DupAck ()
   else if (m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
     { // Increase cwnd for every additional dupack (RFC2582, sec.3 bullet #3)
       m_tcb->m_cWnd += m_tcb->m_segmentSize;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd);
       NS_LOG_INFO (m_dupAckCount << " Dupack received in fast recovery mode."
                    "Increase cwnd to " << m_tcb->m_cWnd);
       SendPendingData (m_connected);
@@ -1594,6 +1605,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
           // packet algorithm from FACK to NewReno. We simply go back in Open.
           m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_OPEN);
           m_tcb->m_congState = TcpSocketState::CA_OPEN;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " -> CA_OPEN, ReceivedAck");
           m_congestionControl->PktsAcked (m_tcb, segsAcked, m_lastRtt);
           m_dupAckCount = 0;
           m_retransOut = 0;
@@ -1620,10 +1632,12 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
                * arrive, execute step 4 of Section 3.2 of [RFC5681]).
                 */
               m_tcb->m_cWnd = SafeSubtraction (m_tcb->m_cWnd, bytesAcked);
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd);
 
               if (segsAcked >= 1)
                 {
                   m_tcb->m_cWnd += m_tcb->m_segmentSize;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd);
                 }
 
               callCongestionControl = false; // No congestion control on cWnd show be invoked
@@ -1670,6 +1684,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
               newSegsAcked = (ackNumber - m_recover) / m_tcb->m_segmentSize;
               m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_OPEN);
               m_tcb->m_congState = TcpSocketState::CA_OPEN;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " -> CA_OPEN, ReceivedAck");
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd << " BytesInFlight " << BytesInFlight());
 
               NS_LOG_INFO ("Received full ACK for seq " << ackNumber <<
                            ". Leaving fast recovery with cwnd set to " << m_tcb->m_cWnd);
@@ -1687,6 +1703,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
             {
               m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_OPEN);
               m_tcb->m_congState = TcpSocketState::CA_OPEN;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " -> CA_OPEN, ReceivedAck");
               NS_LOG_DEBUG ("LOSS -> OPEN");
             }
         }
@@ -2923,6 +2940,7 @@ TcpSocketBase::ReTxTimeout ()
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
+//NS_LOG_UNCOND ("ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
   // If erroneous timeout in closed/timed-wait state, just return
   if (m_state == CLOSED || m_state == TIME_WAIT)
     {
@@ -3054,8 +3072,10 @@ TcpSocketBase::Retransmit ()
     {
       m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_LOSS);
       m_tcb->m_congState = TcpSocketState::CA_LOSS;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " -> CA_LOSS, Retransmit");
       m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
       m_tcb->m_cWnd = m_tcb->m_segmentSize;
+//NS_LOG_UNCOND (" " << Simulator::Now().GetSeconds() << " m_ssThresh " << m_tcb->m_ssThresh << " m_cWnd " << m_tcb->m_cWnd << " BytesInFlight " << BytesInFlight());
     }
 
   m_tcb->m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack

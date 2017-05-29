@@ -198,6 +198,22 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
 }
 
+Ptr<PacketSink> sink;
+uint64_t lastTotalRx = 0;
+std::ofstream *streamThroughput;
+
+void
+CalculateThroughput ()
+{
+  Time now = Simulator::Now ();                                         /* Return the simulator's virtual time. */
+  double cur = (sink->GetTotalRx () - lastTotalRx) * (double) 8 / 1e5;     /* Convert Application RX Packets to MBits. */
+  *streamThroughput  << now.GetSeconds () << "\t" << cur << " Mbit/s" << std::endl;
+  lastTotalRx = sink->GetTotalRx ();
+  Simulator::Schedule (MilliSeconds (100), &CalculateThroughput);
+}
+
+std::string outputName;
+
 int
 main (int argc, char *argv[])
 {
@@ -218,7 +234,6 @@ main (int argc, char *argv[])
 
   uint8_t dcType;
   uint16_t  pdcpReorderingTimer, splitAlgorithm;
-  std::string outputName;
 
   CommandLine cmd;
   cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
@@ -268,9 +283,12 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("EpcX2", LOG_FUNCTION);
 //  LogComponentEnable ("TcpSocketBase", LOG_FUNCTION);
 //  LogComponentEnable ("TcpSocketBase", LOG_DEBUG);
+//  LogComponentEnable ("CoDelQueueDisc", LOG_FUNCTION);
+  LogComponentEnable ("QueueDisc", LOG_INFO);
+  LogComponentEnable ("LtePdcp", LOG_INFO);
+//LogComponentEnable ("TcpSocketBase", LOG_DEBUG);
 
   if (log_packetflow){
-    LogComponentEnable ("LtePdcp", LOG_INFO);
     LogComponentEnable ("EpcEnbApplication", LOG_INFO);
     LogComponentEnable ("EpcSgwPgwApplication", LOG_INFO);
     LogComponentEnable ("LteEnbRrc", LOG_INFO);
@@ -299,6 +317,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*200));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   Config::SetDefault ("ns3::CoDelQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
 
   NS_LOG_UNCOND("# Set lteHelper, PointToPointEpcHelper");
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -439,12 +458,15 @@ main (int argc, char *argv[])
   Ptr<OutputStreamWrapper> stream_cwnd = asciiTraceHelper.CreateFileStream (outputName + "_tcp_cwnd.txt");
   ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream_cwnd));
 
+  streamThroughput = new std::ofstream(outputName + "_throughput.txt");
+  Simulator::Schedule (Seconds (startTime), &CalculateThroughput);
+
   app->SetStopTime(Seconds(simTime));
   Simulator::Stop(Seconds(simTime+0.5));
 
   NS_LOG_UNCOND("# Run simulation");
+  sink = serverApps.Get (0)->GetObject<PacketSink> ();
   Simulator::Run();
-  Ptr<PacketSink> sink = serverApps.Get (0)->GetObject<PacketSink> ();
 
   double lteThroughput = sink->GetTotalRx () * 8.0 / (1000000.0*(simTime - startTime));
   NS_LOG_UNCOND ("LastPacket " << packetRxTime << " TotalFlow " << sumPacketSize << "Mb");
