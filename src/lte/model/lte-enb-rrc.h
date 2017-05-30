@@ -110,11 +110,14 @@ public:
 
     double etha_AtMenbFromDelay, etha_AtSenbFromDelay; //sjkang
     double etha_AtMenbFrom_Thr_,etha_AtSenbFrom_Thr_; //sjkang
-    const double targetDelay = 0.2; //sjkang
-    double pastEthaAtMenb, pastEthaAtSenb;
+    double etha_AtMenbFromQueueSize,etha_AtSenbFromQueueSize; //sjkang
+    const double targetDelay = 0.01; //sjkang
+    double pastEthaAtMenbFromDelay, pastEthaAtSenbFromDelay;
+    double pastEthaAtMenbFromQueueSize, pastEthaAtSenbFromQueuesize;
     void UpdateEthas(); //sjkang
-	 double sigma = 0.001; //sjkang
+	 double sigma = 0.01; //sjkang
 	double alpha =1/99.0; //sjkang
+	double targetQueueSize = 100000.0;
   /** 
    * Set the identifiers of the source eNB for the case where a UE
    * joins the current eNB as part of a handover procedure 

@@ -214,15 +214,15 @@ int
 main (int argc, char *argv[])
 {
   // default values
-  double simTime = 10.0;
+  double simTime = 9.0;
   double startTime =1.0;
   int log_packetflow = 0;
-  int dcType_t = 3; // 0:Single Connection, 1:1A, 2:3C, 3:1X
+  int dcType_t = 2; // 0:Single Connection, 1:1A, 2:3C, 3:1X
   int pdcpReorderingTimer_t = 100;
   int x2LinkDelay = 20;
   bool enablePDCPReordering = true;
   uint16_t downlinkRb = 100;
-  int splitAlgorithm_t = 1;
+  int splitAlgorithm_t = 4; // 3 : delay model, 4: queue model
 /*
 --Split Algorithm List--
  0: MeNB only
@@ -270,10 +270,10 @@ main (int argc, char *argv[])
   }
 
   // Logging CoDel queue packet drop
-  LogComponentEnable ("QueueDisc", LOG_INFO);
+ // LogComponentEnable ("QueueDisc", LOG_INFO);
 
   // Logging PDCP packet discarding and PDCP reordering timer operation
-  LogComponentEnable ("LtePdcp", LOG_INFO);
+  //LogComponentEnable ("LtePdcp", LOG_INFO);
 
   // These attributes need to be checked before simulation
   Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
@@ -306,7 +306,7 @@ main (int argc, char *argv[])
 
   lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (downlinkRb));
   lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (downlinkRb));
-
+//  lteHelper->EnableRlcTraces();
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
 

@@ -672,7 +672,7 @@ void
 UeManager::SendData3C (uint8_t bid, Ptr<Packet> p) // woody3C
 {
   NS_LOG_FUNCTION (this << p << (uint16_t) bid);
-  NS_LOG_INFO ("***SeNB receives PDCP PDU through X2 interface");
+  NS_LOG_INFO ("**SeNB receives PDCP PDU through X2 interface");
 
   uint8_t drbid = Bid2Drbid (bid);
   Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);
@@ -716,8 +716,8 @@ UeManager::UpdateEthas(){
 
 	etha_AtMenbFromDelay= DelayDifferenceAtMenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
 	etha_AtSenbFromDelay = DelayDifferenceAtSenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
-	pastEthaAtMenb = (1-alpha)*pastEthaAtMenb + alpha*etha_AtMenbFromDelay;
-	pastEthaAtSenb = (1-alpha)*pastEthaAtSenb +alpha* etha_AtSenbFromDelay;
+	pastEthaAtMenbFromDelay = (1-alpha)*pastEthaAtMenbFromDelay + alpha*etha_AtMenbFromDelay;
+	pastEthaAtSenbFromDelay = (1-alpha)*pastEthaAtSenbFromDelay +alpha* etha_AtSenbFromDelay;
 
 
 	double ThroughputAtMenb = info[0].averageThroughput;
@@ -730,10 +730,23 @@ UeManager::UpdateEthas(){
 		 etha_AtMenbFrom_Thr_= (targetThroughput_AtMenb/ThroughputAtMenb)/theSumOfThroughputRatio;
 		etha_AtSenbFrom_Thr_=(targetThroughput_AtSenb/ThroughputAtSenb)/theSumOfThroughputRatio;
 
+
+		double queueSizeAtMenb, queueSizeAtSenb;
+ 	 queueSizeAtMenb = info[0].rlc_retx_queue + info[0].rlc_tx_queue;
+ 	 queueSizeAtSenb = info[1].rlc_retx_queue +info[1].rlc_tx_queue;
+ 	double QueueDifferenceAtMenb = std::max (targetQueueSize - queueSizeAtMenb, sigma*1000);
+ 	double QueueDifferenceAtSenb = std::max (targetQueueSize - queueSizeAtSenb, sigma*1000);
+
+ 	etha_AtMenbFromQueueSize = QueueDifferenceAtMenb /(QueueDifferenceAtMenb+QueueDifferenceAtSenb);
+ 	etha_AtSenbFromQueueSize = QueueDifferenceAtSenb /(QueueDifferenceAtMenb+QueueDifferenceAtSenb);
+    pastEthaAtMenbFromQueueSize = (1-alpha)*pastEthaAtMenbFromQueueSize+alpha * etha_AtMenbFromQueueSize;
+    pastEthaAtSenbFromQueuesize = (1-alpha)*pastEthaAtSenbFromQueuesize+alpha* etha_AtSenbFromQueueSize;
     //  std::cout << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
 
-  	OutFile_forEtha << Simulator::Now().GetSeconds() << " etha1" << "\t" << pastEthaAtMenb << "\t" << "etha2" <<"\t "
-  			<< pastEthaAtSenb << "\t" << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
+  	OutFile_forEtha << Simulator::Now().GetSeconds()<< "\t" << " Menb_etha_delay" << "\t" << pastEthaAtMenbFromDelay << "\t" << "Senb_etha_delay" <<"\t " 
+       <<pastEthaAtSenbFromDelay <<"\t"<<"Menb_etha_Queue" <<"\t" <<  pastEthaAtMenbFromQueueSize <<"\t  " << "Senb_etha_Queue" << "\t"<<
+                       pastEthaAtSenbFromQueuesize << std::endl;
+  		//	<< pastEthaAtSenbFromDelay << "\t" << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
 }
 
 int count_forSplitting=0;
@@ -764,28 +777,49 @@ UeManager::SplitAlgorithm () // woody
       if (m_lastDirection == 0) return 1;
       else return 0;
       break;
-    case 3:  //size model
+    case 3:  //delay model
 
-    	        if (count_forSplitting > size*(pastEthaAtSenb+pastEthaAtMenb)){
+    	        if (count_forSplitting > size*(pastEthaAtSenbFromDelay+pastEthaAtMenbFromDelay)){
     	        	UpdateEthas();
 
     	        	count_forSplitting =0;
     	        	 return 0;
     	        }
-    	        else if (count_forSplitting < pastEthaAtMenb*size)
+    	        else if (count_forSplitting < pastEthaAtMenbFromDelay*size)
     	        {
 
     	        	count_forSplitting++;
     	        	return 0;
 
     	        }
-    	        else if (count_forSplitting >= pastEthaAtMenb *size
-    	        		&& count_forSplitting <= size*(pastEthaAtMenb+pastEthaAtSenb))
+    	        else if (count_forSplitting >= pastEthaAtMenbFromDelay *size
+    	        		&& count_forSplitting <= size*(pastEthaAtMenbFromDelay+pastEthaAtSenbFromDelay))
     	        {
     	          	count_forSplitting++;
     	        	return 1;
     	        }
     	        break;
+    case 4:
+    if (count_forSplitting > size*(pastEthaAtSenbFromQueuesize+pastEthaAtMenbFromQueueSize)){
+  	        	UpdateEthas();
+
+  	        	count_forSplitting =0;
+  	        	 return 0;
+  	        }
+  	        else if (count_forSplitting < pastEthaAtMenbFromQueueSize*size)
+  	        {
+
+  	        	count_forSplitting++;
+  	        	return 0;
+
+  	        }
+  	        else if (count_forSplitting >= pastEthaAtMenbFromQueueSize *size
+  	        		&& count_forSplitting <= size*(pastEthaAtMenbFromQueueSize+pastEthaAtSenbFromQueuesize))
+  	        {
+  	          	count_forSplitting++;
+  	        	return 1;
+  	        }
+  	        break;
 
   }
   return -1;
