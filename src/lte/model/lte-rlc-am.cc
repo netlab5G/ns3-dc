@@ -2251,7 +2251,7 @@ LteRlcAm::IsEnbRlc () // woody
 }
 
 void
-LteRlcAm::SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr){
+LteRlcAm::SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr){ // woody
   NS_LOG_FUNCTION (this);
   m_assistInfoPtr = assistInfoPtr;
 }

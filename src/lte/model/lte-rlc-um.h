@@ -56,12 +56,26 @@ public:
   virtual void DoNotifyHarqDeliveryFailure ();
   virtual void DoReceivePdu (Ptr<Packet> p);
 
-  virtual double GetBufferSize (); // sjkang
+  // sjkang
+  virtual double GetBufferSize ();
+  void GetReportBufferStatus( LteMacSapProvider::ReportBufferStatusParameters r);
+  int sum;
+  int p;
+  double averageBufferSize;
+  Time SamplingTime;
+  uint32_t ArrayInMovingWindow[11];
 
-  virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr); // woody
-  virtual void IsEnbRlc (void); // woody
-  virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc); // woody
+  // woody
+  virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
+  virtual void IsEnbRlc (void);
+  virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc);
 private:
+  // woody
+  LteRrcSap::AssistInfo *m_assistInfoPtr;
+  bool m_isEnbRlc;
+  Ptr<LteEnbRrc> m_enbRrc;
+  Ptr<LteUeRrc> m_ueRrc;
+
   void ExpireReorderingTimer (void);
   void ExpireRbsTimer (void);
 

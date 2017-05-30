@@ -48,6 +48,13 @@ LteRlcUm::LteRlcUm ()
 {
   NS_LOG_FUNCTION (this);
   m_reassemblingState = WAITING_S0_FULL;
+
+  // sjkang
+  averageBufferSize=0;
+  p=0;
+  sum=0;
+
+  m_isEnbRlc = false; // woody
 }
 
 LteRlcUm::~LteRlcUm ()
@@ -116,6 +123,8 @@ LteRlcUm::DoTransmitPdcpPdu (Ptr<Packet> p)
       NS_LOG_LOGIC ("txBufferSize    = " << m_txBufferSize);
       NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
     }
+
+  GetBufferSize(); // sjkang
 
   /** Report Buffer Status */
   DoReportBufferStatus ();
@@ -1142,6 +1151,8 @@ LteRlcUm::DoReportBufferStatus (void)
   r.retxQueueHolDelay = 0;
   r.statusPduSize = 0;
 
+  GetReportBufferStatus(r); // sjkang
+
   NS_LOG_LOGIC ("Send ReportBufferStatus = " << r.txQueueSize << ", " << r.txQueueHolDelay );
   m_macSapProvider->ReportBufferStatus (r);
 }
@@ -1201,29 +1212,108 @@ LteRlcUm::ExpireRbsTimer (void)
 double
 LteRlcUm::GetBufferSize() // sjkang
 {
-  NS_FATAL_ERROR ("Not implemented yet");
-  return -1;
+  NS_LOG_FUNCTION(this);
+  Time delta_t=MilliSeconds(1.0);
+
+  SamplingTime = Simulator::Now();
+
+  //extracting the sample value per 1ms
+  if (Simulator::Now() >= SamplingTime +delta_t)
+  {
+    SamplingTime =Simulator::Now();
+
+    // the procedure untill moving window buffer is full
+    if (p <= 9)
+    {
+      ArrayInMovingWindow[p] =m_txBufferSize; //m_txonBufferSize +m_retxBufferSize+m_txedBufferSize;
+      sum += ArrayInMovingWindow[p];
+      averageBufferSize = sum/10.0;
+    }
+    //if the number of samples is equal to 10 , then get moving average value
+    else if (p >9)
+    {
+      // discard the last value in moving window buffer
+      int t= ArrayInMovingWindow[0];
+      //moving window
+      for (int j=1; j<10;j++){ ArrayInMovingWindow[j-1]=ArrayInMovingWindow[j];}
+      // update the new value and add to moving window buffer
+      ArrayInMovingWindow[9] = m_txBufferSize; // m_txonBufferSize + m_retxBufferSize +m_txedBufferSize;
+      //previous sum is updated for getting new moving average value
+      sum = sum-t+ArrayInMovingWindow[9];
+
+      averageBufferSize =(double)sum/10.0;
+
+//      if (enb1_Address ==this) OutFile5<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+//      else if(ue_Address==this) OutFile6<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+//      else if (enb2_Address == this) OutFile7<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+
+      // woody
+      m_assistInfoPtr->rlc_avg_buffer = averageBufferSize;
+      if (m_assistInfoPtr){
+        if (m_isEnbRlc){
+          m_enbRrc->SendAssistInfo (*m_assistInfoPtr);
+        }
+        else{
+          m_ueRrc->SendAssistInfo (*m_assistInfoPtr);
+        }
+      }
+    }
+    p++;
+  }
+  return averageBufferSize;
+}
+
+void
+LteRlcUm::GetReportBufferStatus(LteMacSapProvider::ReportBufferStatusParameters r){
+  NS_LOG_FUNCTION(this);
+/*  if (cc==0)
+  {
+    OutFile6<<"Rlc Transmission Queue" << "\t"<< "Rlc retransmission Queue" << "\t"  <<"the Head Of Line delay of the transmission qu
+eue"<<"\t"<<" the Head Of Line delay of the retransmission queue"<<std::endl;
+    cc=1;
+  }
+
+  if (enb1_Address ==this) OutFile8<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 <
+< "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if(ue_Address==this) OutFile9<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0
+<< "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if (enb2_Address == this) OutFile10<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1
+000.0 << "\t"<<(double)r.retxQueueHolDelay/1000.0 << std::endl;*/
+
+  // woody
+  m_assistInfoPtr->rlc_tx_queue = r.txQueueSize;
+  m_assistInfoPtr->rlc_retx_queue = r.retxQueueSize;
+  m_assistInfoPtr->rlc_tx_queue_hol_delay = (double)r.txQueueHolDelay/1000.0;
+  m_assistInfoPtr->rlc_retx_queue_hol_delay = (double)r.retxQueueHolDelay/1000.0;
+  if (m_assistInfoPtr){
+    if (m_isEnbRlc){
+      m_enbRrc->SendAssistInfo (*m_assistInfoPtr);
+    }
+    else{
+      m_ueRrc->SendAssistInfo (*m_assistInfoPtr);
+    }
+  }
 }
 
 void
 LteRlcUm::SetAssistInfoPtr(LteRrcSap::AssistInfo* assistInfoPtr) // woody
 {
-  NS_LOG_ERROR ("Not implemented yet");
-  return;
+  NS_LOG_FUNCTION (this);
+  m_assistInfoPtr = assistInfoPtr;
 }
 
 void
-LteRlcUm:: IsEnbRlc (void) // woody
+LteRlcUm:: IsEnbRlc () // woody
 {
-  NS_FATAL_ERROR ("Not implemented yet");
-  return;
+  m_isEnbRlc = true;
 }
 
 void
 LteRlcUm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
 {
-  NS_FATAL_ERROR ("Not implemented yet");
-  return;
+  NS_LOG_FUNCTION (this);
+  m_enbRrc = enbRrc;
+  m_ueRrc = ueRrc;
 }
 
 } // namespace ns3
