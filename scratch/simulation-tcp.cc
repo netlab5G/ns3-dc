@@ -229,7 +229,7 @@ main (int argc, char *argv[])
   uint16_t downlinkRb = 100;
   double distance = 200.0; // distance between MeNB and SeNB
   double velocity = 5.0; // velocity of UE
-  bool isTcp = false; // true:TCP, false:UDP
+  bool isTcp = true; // true:TCP, false:UDP
   int splitAlgorithm_t = 2; // choose split algorithm among the list below
 /*
 --Split Algorithm List--
