@@ -29,10 +29,9 @@
 #include "ns3/ipv4-queue-disc-item.h"
 #include "ns3/ipv4-packet-filter.h"
 
-#include <fstream>
-
 #include "ns3/lte-enb-rrc.h" // woody
 #include "ns3/lte-ue-rrc.h" // woody
+#include <fstream> // woody
 
 namespace ns3 {
 
@@ -95,6 +94,7 @@ LteRlcAm::LteRlcAm ()
   sum=0;
 
   m_isEnbRlc = false; // woody
+  sumPacketSize = 0; // woody
 }
 
 LteRlcAm::~LteRlcAm ()
@@ -1030,6 +1030,8 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
       delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
     }
   m_rxPdu (m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
+
+  sumPacketSize += p->GetSize(); // woody
 
   // Get RLC header parameters
   LteRlcAmHeader rlcAmHeader;
@@ -2262,6 +2264,16 @@ LteRlcAm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
   NS_LOG_FUNCTION(this);
   m_enbRrc = enbRrc;
   m_ueRrc = ueRrc;
+}
+
+void
+LteRlcAm::CalculatePathThroughput (std::ofstream *stream) // woody
+{
+  Time now = Simulator::Now ();                                         /* Return the simulator's virtual time. */
+  double cur = (sumPacketSize - lastSumPacketSize) * (double) 8 / 1e5;     /* Convert Application RX Packets to MBits. */
+  *stream << now.GetSeconds () << "\t" << cur << std::endl;
+  lastSumPacketSize = sumPacketSize;
+  Simulator::Schedule (MilliSeconds (100), &LteRlcAm::CalculatePathThroughput, this, stream);
 }
 
 } // namespace ns3

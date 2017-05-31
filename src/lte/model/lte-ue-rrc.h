@@ -311,6 +311,7 @@ private:
 
   Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
   Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
+  uint8_t objectCounter; // woody
 
   // PDCP SAP methods
   void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);

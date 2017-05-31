@@ -133,6 +133,7 @@ public:
   virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr) = 0; // woody
   virtual void IsEnbRlc () = 0; // woody
   virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) = 0; // woody
+  virtual void CalculatePathThroughput (std::ofstream *streamPathThroughput) = 0; // woody
 
 protected:
   // Interface forwarded by LteRlcSapProvider
@@ -193,6 +194,7 @@ public:
   virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr); // woody
   virtual void IsEnbRlc (); // woody
   virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc); // woody
+  virtual void CalculatePathThroughput (std::ofstream *streamPathThroughput); // woody
 
 private:
   void ReportBufferStatus ();

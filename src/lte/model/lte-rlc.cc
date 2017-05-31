@@ -303,6 +303,12 @@ LteRlcSm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
   return;
 }
 
+void
+LteRlcSm::CalculatePathThroughput (std::ofstream *streamPathThroughput) // woody
+{
+  NS_FATAL_ERROR ("Not implemented yet");
+}
+
 //////////////////////////////////////////
 
 // LteRlcTm::~LteRlcTm ()

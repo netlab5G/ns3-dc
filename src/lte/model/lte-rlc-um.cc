@@ -29,6 +29,7 @@
 #include "ns3/lte-rrc-sap.h" // woody
 #include "ns3/lte-enb-rrc.h" // woody
 #include "ns3/lte-ue-rrc.h" // woody 
+#include "fstream" // woody
 
 namespace ns3 {
 
@@ -429,6 +430,8 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p)
   p->RemovePacketTag (rlcTag);
   delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
   m_rxPdu (m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
+
+  sumPacketSize += p->GetSize(); // woody
 
   // 5.1.2.2 Receive operations
 
@@ -1314,6 +1317,16 @@ LteRlcUm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
   NS_LOG_FUNCTION (this);
   m_enbRrc = enbRrc;
   m_ueRrc = ueRrc;
+}
+
+void
+LteRlcUm::CalculatePathThroughput (std::ofstream *stream) // woody
+{
+  Time now = Simulator::Now ();                                         /* Return the simulator's virtual time. */
+  double cur = (sumPacketSize - lastSumPacketSize) * (double) 8 / 1e5;     /* Convert Application RX Packets to MBits. */
+  *stream << now.GetSeconds () << "\t" << cur << std::endl;
+  lastSumPacketSize = sumPacketSize;
+  Simulator::Schedule (MilliSeconds (100), &LteRlcUm::CalculatePathThroughput, this, stream);
 }
 
 } // namespace ns3
