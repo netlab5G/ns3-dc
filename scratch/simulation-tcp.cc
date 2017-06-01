@@ -219,16 +219,16 @@ int
 main (int argc, char *argv[])
 {
   // default values
-  double simTime = 10.0; // total duration of simulation (s)
+  double simTime = 20.0; // total duration of simulation (s)
   double startTime =1.0;
   bool log_packetflow = false; // enabling log module for packet tracing
-  int dcType_t = 2; // Dual connectivity type (0:Single Connection, 1:1A, 2:3C, 3:1X)
+  int dcType_t = 1; // Dual connectivity type (0:Single Connection, 1:1A, 2:3C, 3:1X)
   int pdcpReorderingTimer_t = 100; // PDCP packet reordering timer (ms)
   int x2LinkDelay = 0;
   bool enablePDCPReordering = true; // enabling PDCP packet reordering function
   uint16_t downlinkRb = 100;
   double distance = 200.0; // distance between MeNB and SeNB
-  double velocity = 5.0; // velocity of UE
+  double velocity = 0.0; // velocity of UE
   bool isTcp = true; // true:TCP, false:UDP
   int splitAlgorithm_t = 2; // choose split algorithm among the list below
 /*
@@ -287,14 +287,14 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
-  Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
+ Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
   Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
 
   // These would be used as default in most cases
   if(isTcp)
   {
     Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
+   Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true)); //codel
     Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (enablePDCPReordering));
     Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
   }
@@ -471,7 +471,7 @@ main (int argc, char *argv[])
 
     Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
     Ptr<MyApp> app = CreateObject<MyApp> ();
-    app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("100Mb/s"));
+    app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("300Mb/s"));
 
     remoteHostContainer.Get (0)->AddApplication (app);
     AsciiTraceHelper asciiTraceHelper;

@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
+#include "Gtpu_SN_Header.h"
 using namespace std;
 namespace ns3 {
 
@@ -89,6 +90,7 @@ LtePdcp::LtePdcp ()
   k=0;
   check =false;
   m_isEnbPdcp =false; // woody
+  enable1X=false;
 }
 
 LtePdcp::~LtePdcp ()
@@ -199,11 +201,29 @@ void
 LtePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
+LtePdcpHeader pdcpHeader;
+//////////////////////////////////////////////////////// sjkang0601 for mapping Gtpu SN to Pdcp SN
+if(!m_isEnbPdcp)  //for ue
+{
+        pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
+         m_txSequenceNumber++;
+}
+else if (enable1X)  ////  the case of 1X
+{
+        Gtpu_SN_Header gtpu_SN_Header;
+        p->RemoveHeader(gtpu_SN_Header);
+        m_txSequenceNumber= gtpu_SN_Header.GetGtpuSN();
+	pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
+  
+}
+else { ////  the case of 1A and 3C
+   pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
+         m_txSequenceNumber++;
+}
+/////////////////////////////////////////////////////////////////////////////
+ // pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
 
-  LtePdcpHeader pdcpHeader;
-  pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
-
-  m_txSequenceNumber++;
+//  m_txSequenceNumber++;
   if (m_txSequenceNumber > m_maxPdcpSn)
     {
       m_txSequenceNumber = 0;
@@ -239,31 +259,33 @@ LtePdcp::DoTransmitPdcpSduDc (Ptr<Packet> p) // woody3C
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
-  LtePdcpHeader pdcpHeader;
+ LtePdcpHeader pdcpHeader;
   pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
 
   m_txSequenceNumber++;
-  if (m_txSequenceNumber > m_maxPdcpSn)
-    {
-      m_txSequenceNumber = 0;
-    }
+		
+	if (m_txSequenceNumber > m_maxPdcpSn)
+    		{
+      		m_txSequenceNumber = 0;
+    		}
 
-  pdcpHeader.SetDcBit (LtePdcpHeader::DATA_PDU);
+	  pdcpHeader.SetDcBit (LtePdcpHeader::DATA_PDU);
 
-  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
-  p->AddHeader (pdcpHeader);
+	  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
+	  p->AddHeader (pdcpHeader);
 
-  // Sender timestamp
-  PdcpTag pdcpTag (Simulator::Now ());
-  p->AddPacketTag (pdcpTag);
-  m_txPdu (m_rnti, m_lcid, p->GetSize ());
+	  // Sender timestamp
+	  PdcpTag pdcpTag (Simulator::Now ());
+	  p->AddPacketTag (pdcpTag);
+	  m_txPdu (m_rnti, m_lcid, p->GetSize ());
 
-  LtePdcpSapUser::TransmitPdcpPduParametersDc params;
-  params.rnti = m_rnti;
-  params.lcid = m_lcid;
-  params.pdcpPdu = p;
+	  LtePdcpSapUser::TransmitPdcpPduParametersDc params;
+	  params.rnti = m_rnti;
+	  params.lcid = m_lcid;
+	  params.pdcpPdu = p;
 
-  m_pdcpSapUser->TransmitPdcpPduDc (params);
+	  m_pdcpSapUser->TransmitPdcpPduDc (params);
+
 }
 
 

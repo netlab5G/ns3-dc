@@ -42,7 +42,7 @@
 #include <ns3/lte-pdcp.h>
 
 #include <fstream>
-
+#include "Gtpu_SN_Header.h"
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteEnbRrc");
@@ -762,7 +762,7 @@ UeManager::SplitAlgorithm () // woody
 */
 
   // return 0 for Tx through MeNB &  return 1 for Tx through SeNB
-  int size =50;
+  int size =30 ;  //sjkang0531
   switch (m_splitAlgorithm)
   {
     case 0:
@@ -858,11 +858,19 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
             if (bearerInfo != NULL)
               {
                 LtePdcpSapProvider* pdcpSapProvider = bearerInfo->m_pdcp->GetLtePdcpSapProvider ();
-        if (bearerInfo->m_dcType == 0 || bearerInfo->m_dcType == 1 || bearerInfo->m_dcType == 3){ // woody3C, woody1X
-          pdcpSapProvider->TransmitPdcpSdu (params);
-        }
+		
+		Gtpu_SN_Header gtpu_SN_Header; //sjkang0601
+        if (bearerInfo->m_dcType == 0 || bearerInfo->m_dcType == 1){
+         p->RemoveHeader(gtpu_SN_Header); //sjkang0601
+	pdcpSapProvider->TransmitPdcpSdu (params); //sjkang0601
+	        }        
+	else if ( bearerInfo->m_dcType == 3){ // woody3C, woody1X
+		bearerInfo->m_pdcp->enable1X =true;  //sjkang0601
+          	pdcpSapProvider->TransmitPdcpSdu (params);
+	 	}
         else if (bearerInfo->m_dcType == 2){
-          int t_splitter = SplitAlgorithm();
+          p->RemoveHeader(gtpu_SN_Header);  //sjkang0601
+	int t_splitter = SplitAlgorithm();
 	  if (t_splitter == 1){
             NS_LOG_INFO("**MeNB forward packet toward SeNB");
             m_lastDirection = 1;
@@ -2798,7 +2806,7 @@ LteEnbRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> p
   else if (dcType == 3){
     m_assistInfoSinkPgw = pgwApp;
   }
-  else NS_FATAL_ERROR ("Unimplemented DC type " << dcType);
+ else  NS_FATAL_ERROR ("Unimplemented DC type " << dcType);  //sjkang0601
 }
 
 void

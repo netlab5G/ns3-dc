@@ -47,6 +47,7 @@ public:
   virtual ~LtePdcp ();
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
+  bool enable1X=false; //sjkang0601
   /**
    *
    *

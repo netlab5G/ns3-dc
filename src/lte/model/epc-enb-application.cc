@@ -31,7 +31,7 @@
 #include "eps-bearer-tag.h"
 
 #include "ns3/simulator.h"
-
+#include "Gtpu_SN_Header.h"
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("EpcEnbApplication");
@@ -294,6 +294,12 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
+  //sjkang0601
+  Gtpu_SN_Header gtpu_SN_Header; //sjkang0601
+  gtpu_SN_Header.SetGtpuSN(gtpu.GetSequenceNumber());//sjkang0601
+//std::cout << gtpu_SN_Header.GetGtpuSN() << std::endl;
+  packet->AddHeader(gtpu_SN_Header); //sjkang
+///////////////////////////////
   uint32_t teid = gtpu.GetTeid ();
   std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
   NS_ASSERT (it != m_teidRbidMap.end ());
@@ -319,6 +325,7 @@ EpcEnbApplication::SendToS1uSocket (Ptr<Packet> packet, uint32_t teid)
   gtpu.SetTeid (teid);
   // From 3GPP TS 29.281 v10.0.0 Section 5.1
   // Length of the payload + the non obligatory GTP-U header
+
   gtpu.SetLength (packet->GetSize () + gtpu.GetSerializedSize () - 8);  
   packet->AddHeader (gtpu);
   uint32_t flags = 0;

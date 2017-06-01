@@ -1152,7 +1152,7 @@ LteUeRrc::SetAssistInfoSink (Ptr<LteEnbRrc> enbRrc, Ptr<EpcSgwPgwApplication> pg
   else if (dcType == 3){
     m_assistInfoSinkPgw = pgwApp;
   }
-  else NS_FATAL_ERROR ("Unimplemented DC type");
+  else NS_FATAL_ERROR ("Unimplemented DC type"); 
 }
 
 void

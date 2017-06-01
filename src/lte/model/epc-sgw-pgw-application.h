@@ -156,7 +156,17 @@ public:
   void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
   int SplitAlgorithm (); // woody
   void IsAssistInfoSink (); // woody
-
+////////////////////////////////////////////sjkang0601
+       double etha_AtMenbFromDelay, etha_AtSenbFromDelay; //sjkang
+    double etha_AtMenbFrom_Thr_,etha_AtSenbFrom_Thr_; //sjkang
+    double etha_AtMenbFromQueueSize,etha_AtSenbFromQueueSize; //sjkang
+    const double targetDelay = 0.02; //sjkang
+    double pastEthaAtMenbFromDelay, pastEthaAtSenbFromDelay;
+    double pastEthaAtMenbFromQueueSize, pastEthaAtSenbFromQueuesize;
+    void UpdateEthas(); //sjkang
+	 double sigma = 0.01; //sjkang
+    double alpha =1/99.0; //sjkang
+   double targetQueueSize = 89500.0; //sjkang
 private:
 
   bool m_isAssistInfoSink; // woody
@@ -169,7 +179,7 @@ private:
 
   void DoDeleteBearerCommand (EpcS11SapSgw::DeleteBearerCommandMessage req);
   void DoDeleteBearerResponse (EpcS11SapSgw::DeleteBearerResponseMessage req);
-
+  uint16_t gtpu_SN=0;
   /**
    * store info for each UE connected to this SGW
    */
