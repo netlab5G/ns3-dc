@@ -404,7 +404,7 @@ NS_LOG_UNCOND(it->first);
 
   // ETSI TS 136 323 v14.2.0.
   if (((receivedPDCP_SN -Last_Submitted_PDCP_RX_SN) > reorderingWindow)
-      ||((((Last_Submitted_PDCP_RX_SN-receivedPDCP_SN)) >= 0 && ((Last_Submitted_PDCP_RX_SN-receivedPDCP_SN)< reorderingWindow))))
+      ||((((Last_Submitted_PDCP_RX_SN-receivedPDCP_SN)) >= 1400 && ((Last_Submitted_PDCP_RX_SN-receivedPDCP_SN)< reorderingWindow))))
   {
     NS_LOG_INFO("last SN " << Last_Submitted_PDCP_RX_SN << "\t"
                 "received SN"	<< PacketInBuffer.sequenceNumber<< " _discard");

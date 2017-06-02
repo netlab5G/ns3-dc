@@ -287,7 +287,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
- Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
   Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
 
   // These would be used as default in most cases
