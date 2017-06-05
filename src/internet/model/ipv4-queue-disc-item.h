@@ -78,6 +78,9 @@ public:
    * packet is dequeued from the queue disc)
    */
   virtual bool GetUint8Value (Uint8Values field, uint8_t &value) const;
+ 
+  void SetBid (uint8_t bid); // woody
+  uint8_t GetBid (); // woody
 
 private:
   /**
@@ -102,6 +105,8 @@ private:
 
   Ipv4Header m_header;  //!< The IPv4 header.
   bool m_headerAdded;   //!< True if the header has already been added to the packet.
+
+  uint8_t m_bid; // woody
 };
 
 } // namespace ns3

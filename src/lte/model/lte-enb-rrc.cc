@@ -41,7 +41,10 @@
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
 
+// woody
 #include <fstream>
+#include <ns3/ipv4-queue-disc-item.h>
+#include <ns3/pfifo-fast-queue-disc.h>
 
 namespace ns3 {
 
@@ -261,6 +264,9 @@ UeManager::DoInitialize ()
       break;
     }
 
+  // woody
+  m_splitQueue = CreateObject<PfifoFastQueueDisc> ();
+  m_splitQueue->Initialize ();
 }
 
 
@@ -314,6 +320,10 @@ TypeId UeManager::GetTypeId (void)
                      "UeManager at the eNB RRC",
                      MakeTraceSourceAccessor (&UeManager::m_stateTransitionTrace),
                      "ns3::UeManager::StateTracedCallback")
+    .AddAttribute("ChunkTime", "Timer for building a chunk for splitter",
+                  TimeValue(MilliSeconds(5)),
+                  MakeTimeAccessor (&UeManager::m_chunkTime),
+                  MakeTimeChecker ())
   ;
   return tid;
 }
@@ -820,10 +830,58 @@ UeManager::SplitAlgorithm () // woody
   	        	return 1;
   	        }
   	        break;
-
+    case 5:
+      return 2; // for running chunk split function
+      break;
   }
   return -1;
 }
+
+void
+UeManager::ChunkSplitTimer () // woody
+{
+  NS_LOG_INFO("**ChunkSplitterTimer runs in eNB at " << Simulator::Now().GetSeconds());
+  uint32_t queueSize = m_splitQueue->GetNPackets ();
+
+  uint32_t sendMenb;
+  // woody, define splitting algorithm in here
+  switch (m_splitAlgorithm)
+  {
+    case 5:
+      sendMenb = 0.5 * queueSize;
+      break;
+  }
+
+
+  for (unsigned int i=0; i < queueSize; i++)
+  {
+    Ptr<Ipv4QueueDiscItem> item = DynamicCast<Ipv4QueueDiscItem> (m_splitQueue->Dequeue());
+    Ptr<Packet> p = item->GetPacket();
+    uint8_t bid = item->GetBid();
+
+    LtePdcpSapProvider::TransmitPdcpSduParameters params;
+    params.pdcpSdu = p;
+    params.rnti = m_rnti;
+    params.lcid = Bid2Lcid (bid);
+    uint8_t drbid = Bid2Drbid (bid);
+    Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);
+    LtePdcpSapProvider* pdcpSapProvider = bearerInfo->m_pdcp->GetLtePdcpSapProvider ();
+ 
+    if (i < sendMenb){
+      NS_LOG_INFO("**MeNB transmits packet directly");
+      m_lastDirection = 0;
+      pdcpSapProvider->TransmitPdcpSdu (params);
+    }
+    else{
+      NS_LOG_INFO("**MeNB forward packet toward SeNB");
+      m_lastDirection = 1;
+      m_currentBid = bid;
+      pdcpSapProvider->TransmitPdcpSduDc (params);
+    }
+  }
+}
+
+
 
 void
 UeManager::SendData (uint8_t bid, Ptr<Packet> p)
@@ -863,16 +921,26 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
         }
         else if (bearerInfo->m_dcType == 2){
           int t_splitter = SplitAlgorithm();
-	  if (t_splitter == 1){
+          if (t_splitter == 0) {
+            NS_LOG_INFO("**MeNB transmits packet directly");
+            m_lastDirection = 0;
+            pdcpSapProvider->TransmitPdcpSdu (params);
+          }
+ 	  else if (t_splitter == 1){
             NS_LOG_INFO("**MeNB forward packet toward SeNB");
             m_lastDirection = 1;
             m_currentBid = bid;
             pdcpSapProvider->TransmitPdcpSduDc (params);
           }
-          else if (t_splitter == 0) {
-            NS_LOG_INFO("**MeNB transmits packet directly");
-            m_lastDirection = 0;
-            pdcpSapProvider->TransmitPdcpSdu (params);
+          else if (t_splitter == 2){
+            Ptr<Ipv4QueueDiscItem> item;
+            Ipv4Header ipv4Header;
+            Address dest;
+            item = Create<Ipv4QueueDiscItem> (p, dest, 0, ipv4Header);
+            item->SetBid(bid);
+            m_splitQueue->Enqueue (item);
+
+            if (!t_ChunkTimer.IsRunning()) t_ChunkTimer = Simulator::Schedule(m_chunkTime, &UeManager::ChunkSplitTimer, this);
           }
           else NS_FATAL_ERROR ("unknwon t_splitter value");
         }

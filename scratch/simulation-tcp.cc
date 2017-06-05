@@ -230,13 +230,15 @@ main (int argc, char *argv[])
   double distance = 200.0; // distance between MeNB and SeNB
   double velocity = 5.0; // velocity of UE
   bool isTcp = true; // true:TCP, false:UDP
-  int splitAlgorithm_t = 2; // choose split algorithm among the list below
+  int splitAlgorithm_t = 5; // choose split algorithm among the list below
 /*
 --Split Algorithm List--
  0: MeNB only
  1: SeNB only
  2: alternative splitting
- 3: Proposed V1
+ 3: delay based algorithm
+ 4: queue based algorithm
+ 5: chunk splitting example (50:50)
 */
 
   std::string outputName;
@@ -289,7 +291,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
   Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
-  Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("3ms"));
+  Config::SetDefault ("ns3::UeManager::ChunkTime", TimeValue(MilliSeconds(5)));
 
   // These would be used as default in most cases
   if(isTcp)

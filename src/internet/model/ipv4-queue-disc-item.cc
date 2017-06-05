@@ -95,4 +95,16 @@ Ipv4QueueDiscItem::GetUint8Value (QueueItem::Uint8Values field, uint8_t& value) 
   return ret;
 }
 
+void
+Ipv4QueueDiscItem::SetBid (uint8_t bid) // woody
+{
+  m_bid = bid;
+}
+
+uint8_t
+Ipv4QueueDiscItem::GetBid () // woody
+{
+  return m_bid;
+}
+
 } // namespace ns3

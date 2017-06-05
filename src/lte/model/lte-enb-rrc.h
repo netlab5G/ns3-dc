@@ -41,6 +41,7 @@
 #include <ns3/lte-anr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
 #include <ns3/epc-sgw-pgw-application.h> // woody
+#include <ns3/queue-disc.h> // woody
 
 #include <map>
 #include <set>
@@ -340,12 +341,17 @@ public:
 
   int SplitAlgorithm (); // woody
 
+  void ChunkSplitTimer (); // woody
+
 private:
 
   uint16_t m_dcCell; // woody3C
   uint8_t m_currentBid; // woody3C
   uint16_t m_splitAlgorithm; // woody
   int m_lastDirection;
+  EventId t_ChunkTimer;
+  Ptr<QueueDisc> m_splitQueue;
+  Time m_chunkTime;
 
   /** 
    * Add a new LteDataRadioBearerInfo structure to the UeManager
