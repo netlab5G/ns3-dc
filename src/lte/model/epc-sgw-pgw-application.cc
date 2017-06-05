@@ -1,5 +1,5 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
-/*
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*
+*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *
  * This program is free software; you can redistribute it and/or modify
@@ -173,6 +173,10 @@ EpcSgwPgwApplication::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // wood
 
   return;
 }
+//double pre_QueueSize=0;
+bool ToSenb=false, ToMenb=false;
+int p1,p2;
+
 std::ofstream OutFile_forEtha1X ("etha_At_1X.txt");
 void
 EpcSgwPgwApplication::UpdateEthas(){
@@ -187,10 +191,10 @@ EpcSgwPgwApplication::UpdateEthas(){
 	etha_AtSenbFromDelay = DelayDifferenceAtSenb / (DelayDifferenceAtMenb+DelayDifferenceAtSenb);
 	pastEthaAtMenbFromDelay = (1-alpha)*pastEthaAtMenbFromDelay + alpha*etha_AtMenbFromDelay;
 	pastEthaAtSenbFromDelay = (1-alpha)*pastEthaAtSenbFromDelay +alpha* etha_AtSenbFromDelay;
-
-
-	double ThroughputAtMenb = info1X[0].averageThroughput;
+        //targetDelay = std::max(delayAtMenb, delayAtSenb);    
+        //targetDelay += targetDelay*0.2;
 	double ThroughputAtSenb = info1X[1].averageThroughput;
+        double ThroughputAtMenb = info1X[0].averageThroughput;
 	double targetThroughput_AtMenb = 10000000;
 	double targetThroughput_AtSenb = 9000000;
 	double theSumOfThroughputRatio = targetThroughput_AtMenb/ThroughputAtMenb +targetThroughput_AtSenb/ThroughputAtSenb;
@@ -202,6 +206,7 @@ EpcSgwPgwApplication::UpdateEthas(){
 	 double queueSizeAtMenb, queueSizeAtSenb;
  	 queueSizeAtMenb = info1X[0].rlc_retx_queue + info1X[0].rlc_tx_queue;
  	 queueSizeAtSenb = info1X[1].rlc_retx_queue +info1X[1].rlc_tx_queue;
+
  	double QueueDifferenceAtMenb = std::max (targetQueueSize - queueSizeAtMenb, sigma*1000);
  	double QueueDifferenceAtSenb = std::max (targetQueueSize - queueSizeAtSenb, sigma*1000);
 
@@ -209,8 +214,35 @@ EpcSgwPgwApplication::UpdateEthas(){
  	etha_AtSenbFromQueueSize = QueueDifferenceAtSenb /(QueueDifferenceAtMenb+QueueDifferenceAtSenb);
     pastEthaAtMenbFromQueueSize = (1-alpha)*pastEthaAtMenbFromQueueSize+alpha * etha_AtMenbFromQueueSize;
     pastEthaAtSenbFromQueuesize = (1-alpha)*pastEthaAtSenbFromQueuesize+alpha* etha_AtSenbFromQueueSize;
+       targetQueueSize = std::max(queueSizeAtMenb, queueSizeAtSenb);
+	targetQueueSize += targetQueueSize*0.2;
+	//targetQueueSize = std::max(2.5*t_targetQueueSize - 1.5*pre_QueueSize,t_targetQueueSize+t_targetQueueSize*0.2); 
+        //pre_QueueSize = t_targetQueueSize; 
     //  std::cout << ThroughputAtMenb << "\t" << ThroughputAtSenb << std::endl;
-
+           /* if ( delayAtSenb - delayAtMenb > 1.0 && queueSizeAtMenb !=0 && queueSizeAtSenb!=0){
+            ToMenb=true;
+            ToSenb=false;
+                
+                      
+           }
+        else if(delayAtMenb - delayAtSenb >1.0 && queueSizeAtMenb !=0 && queueSizeAtSenb!=0 ){
+                ToMenb=false;
+                ToSenb=true;
+   
+                }
+        else*/ 
+	if ( info1X[0].rlc_retx_queue > 10000 ) {
+			ToSenb=true;
+			ToMenb= false;
+		}
+	else if (info1X[1].rlc_retx_queue >10000) {
+		ToMenb= true;        
+		ToSenb=false ; 
+		}
+       else{
+                ToSenb=false;
+                ToMenb=false;
+        }
   	OutFile_forEtha1X << Simulator::Now().GetSeconds()<< "\t" << " Menb_etha_delay" << "\t" << pastEthaAtMenbFromDelay << "\t" << "Senb_etha_delay" <<"\t " 
        <<pastEthaAtSenbFromDelay <<"\t"<<"Menb_etha_Queue" <<"\t" <<  pastEthaAtMenbFromQueueSize <<"\t  " << "Senb_etha_Queue" << "\t"<<
                        pastEthaAtSenbFromQueuesize << std::endl;
@@ -265,8 +297,19 @@ EpcSgwPgwApplication::SplitAlgorithm ()
     	        	return 1;
     	        }
     break;
-   case 4:
- 		if (count_forSplitting_At_SgwPgw > size*(pastEthaAtSenbFromQueuesize+pastEthaAtMenbFromQueueSize)){
+   case 4: 
+         
+   /*      if (ToSenb == true && ToMenb==false ) {
+                UpdateEthas();
+                return 1;
+                }
+        else if (ToMenb == true && ToSenb==false) {
+                UpdateEthas();
+                return 0;
+                }
+ 	 else*/ 
+	{		
+		if (count_forSplitting_At_SgwPgw > size*(pastEthaAtSenbFromQueuesize+pastEthaAtMenbFromQueueSize)){
   	        	UpdateEthas();
 
   	        	count_forSplitting_At_SgwPgw =0;
@@ -285,6 +328,7 @@ EpcSgwPgwApplication::SplitAlgorithm ()
   	          	count_forSplitting_At_SgwPgw++;
   	        	return 1;
   	        }
+	}
   	        break;
 
   }

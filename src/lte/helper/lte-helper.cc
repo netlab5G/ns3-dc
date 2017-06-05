@@ -90,19 +90,25 @@ LteHelper::DoInitialize (void)
   m_downlinkChannel = m_channelFactory.Create<SpectrumChannel> ();
   m_uplinkChannel = m_channelFactory.Create<SpectrumChannel> ();
 
+  m_downlinkChannel_1 = m_channelFactory.Create<SpectrumChannel> ();
+  m_uplinkChannel_1 = m_channelFactory.Create<SpectrumChannel> ();
+
   m_downlinkPathlossModel = m_dlPathlossModelFactory.Create ();
   Ptr<SpectrumPropagationLossModel> dlSplm = m_downlinkPathlossModel->GetObject<SpectrumPropagationLossModel> ();
   if (dlSplm != 0)
     {
       NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel in DL");
       m_downlinkChannel->AddSpectrumPropagationLossModel (dlSplm);
+      m_downlinkChannel_1->AddSpectrumPropagationLossModel (dlSplm);
     }
   else
     {
       NS_LOG_LOGIC (this << " using a PropagationLossModel in DL");
       Ptr<PropagationLossModel> dlPlm = m_downlinkPathlossModel->GetObject<PropagationLossModel> ();
+Ptr<PropagationLossModel> dlPlm_1 = m_downlinkPathlossModel->GetObject<PropagationLossModel> ();
       NS_ASSERT_MSG (dlPlm != 0, " " << m_downlinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
       m_downlinkChannel->AddPropagationLossModel (dlPlm);
+       m_downlinkChannel_1->AddPropagationLossModel (dlPlm_1);
     }
 
   m_uplinkPathlossModel = m_ulPathlossModelFactory.Create ();
@@ -111,13 +117,16 @@ LteHelper::DoInitialize (void)
     {
       NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel in UL");
       m_uplinkChannel->AddSpectrumPropagationLossModel (ulSplm);
+           m_uplinkChannel_1->AddSpectrumPropagationLossModel (ulSplm);
     }
   else
     {
       NS_LOG_LOGIC (this << " using a PropagationLossModel in UL");
       Ptr<PropagationLossModel> ulPlm = m_uplinkPathlossModel->GetObject<PropagationLossModel> ();
+  Ptr<PropagationLossModel> ulPlm_1 = m_uplinkPathlossModel->GetObject<PropagationLossModel> ();
       NS_ASSERT_MSG (ulPlm != 0, " " << m_uplinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
       m_uplinkChannel->AddPropagationLossModel (ulPlm);
+          m_uplinkChannel_1->AddPropagationLossModel (ulPlm_1);
     }
   if (!m_fadingModelType.empty ())
     {
@@ -125,6 +134,8 @@ LteHelper::DoInitialize (void)
       m_fadingModule->Initialize ();
       m_downlinkChannel->AddSpectrumPropagationLossModel (m_fadingModule);
       m_uplinkChannel->AddSpectrumPropagationLossModel (m_fadingModule);
+         m_downlinkChannel_1->AddSpectrumPropagationLossModel (m_fadingModule);
+      m_uplinkChannel_1->AddSpectrumPropagationLossModel (m_fadingModule);
     }
   m_phyStats = CreateObject<PhyStatsCalculator> ();
   m_phyTxStats = CreateObject<PhyTxStatsCalculator> ();
@@ -212,6 +223,8 @@ LteHelper::DoDispose ()
   NS_LOG_FUNCTION (this);
   m_downlinkChannel = 0;
   m_uplinkChannel = 0;
+ m_downlinkChannel_1 = 0;
+  m_uplinkChannel_1 = 0;
   Object::DoDispose ();
 }
 
@@ -700,8 +713,10 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   pInterf->AddCallback (MakeCallback (&LteEnbPhy::ReportInterference, phy));
   ulPhy->AddInterferenceDataChunkProcessor (pInterf); // for interference power tracing
 
-  dlPhy->SetChannel (m_downlinkChannel);
-  ulPhy->SetChannel (m_uplinkChannel);
+// dlPhy->SetChannel (m_downlinkChannel_1);
+// ulPhy->SetChannel (m_uplinkChannel_1);
+ dlPhy->SetChannel (m_downlinkChannel);
+ ulPhy->SetChannel (m_uplinkChannel);
 
   Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
   NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling LteHelper::InstallUeDevice ()");
@@ -786,7 +801,7 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   dev->SetAttribute ("LteHandoverAlgorithm", PointerValue (handoverAlgorithm));
   dev->SetAttribute ("LteFfrAlgorithm", PointerValue (ffrAlgorithm));
   dev->SetAttribute ("DlEarfcn", UintegerValue (1000)); //DlEarfcn for SeNB, sychoi
-
+  dev->SetAttribute("UlEarfcn", UintegerValue( 23731)); //sjkang 
   if (m_isAnrEnabled)
     {
       Ptr<LteAnr> anr = CreateObject<LteAnr> (cellId);
@@ -824,8 +839,8 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
 
   dev->Initialize ();
 
-  m_uplinkChannel->AddRx (ulPhy);
-
+ m_uplinkChannel->AddRx (ulPhy);
+  //m_uplinkChannel_1->AddRx(ulPhy);
   if (m_epcHelper != 0)
     {
       NS_LOG_INFO ("adding this eNB to the EPC");
@@ -1052,6 +1067,8 @@ LteHelper::InstallSingleDcUeDevice (Ptr<Node> n) // woody
   ulPhy->SetChannel (m_uplinkChannel);
   dlPhyDc->SetChannel (m_downlinkChannel); // woody, does DC share DL, UL channel with main path?
   ulPhyDc->SetChannel (m_uplinkChannel);
+//  dlPhyDc->SetChannel (m_downlinkChannel_1); // woody, does DC share DL, UL channel with main path?
+//  ulPhyDc->SetChannel (m_uplinkChannel_1);
 
   Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
   NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling LteHelper::InstallUeDevice ()");
@@ -1148,7 +1165,7 @@ LteHelper::InstallSingleDcUeDevice (Ptr<Node> n) // woody
   dev->SetAttribute ("LteUeRrc", PointerValue (rrc));
   dev->SetAttribute ("LteUeRrcDc", PointerValue (rrcDc));
   dev->SetAttribute ("EpcUeNas", PointerValue (nas));
-
+  
   phy->SetDevice (dev);
   dlPhy->SetDevice (dev);
   ulPhy->SetDevice (dev);
@@ -1273,8 +1290,9 @@ LteHelper::AttachDc (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice, Ptr<EpcT
   Ptr<LteEnbNetDevice> enbLteDevice = enbDevice->GetObject<LteEnbNetDevice> ();
 
   Ptr<EpcUeNas> ueNas = ueLteDevice->GetNas ();
-
-  ueNas->ConnectDc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ()); //sychoi
+//  ueDevice->SetAttribute ("DlEarfcn", UintegerValue(1000)); //sjkang
+ 
+  ueNas->ConnectDc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn()); //sychoi   //sjkang
   if (m_epcHelper != 0)
     {
       // activate default EPS bearer

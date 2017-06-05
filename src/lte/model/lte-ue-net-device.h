@@ -81,6 +81,7 @@ public:
    * the sake of simplicity we assume only one EARFCN is supported.
    */
   uint16_t GetDlEarfcn () const;
+ uint16_t GetDlEarfcn_DC () const;
 
   /**
    * \param earfcn the downlink carrier frequency (EARFCN)
@@ -89,6 +90,7 @@ public:
    * the sake of simplicity we assume only one EARFCN is supported.
    */
   void SetDlEarfcn (uint16_t earfcn);
+  void  SetDlEarfcn_DC (uint16_t);
 
   /**
    * \brief Returns the CSG ID the UE is currently a member of.
@@ -155,7 +157,7 @@ private:
   uint64_t m_imsi;
 
   uint16_t m_dlEarfcn; /**< downlink carrier frequency */
-
+  uint16_t m_dlEarfcn_DC; //sjkang0604
   uint32_t m_csgId;
 
   bool m_isDc; // woody

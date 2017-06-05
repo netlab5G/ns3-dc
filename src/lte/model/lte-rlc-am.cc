@@ -2193,9 +2193,9 @@ LteRlcAm::GetBufferSize(){
 
       averageBufferSize =(double)sum/10.0;
 
-      if (enb1_Address ==this) OutFile5<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
-      else if(ue_Address==this) OutFile6<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
-      else if (enb2_Address == this) OutFile7<<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      if (enb1_Address ==this) OutFile5<< Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      else if(ue_Address==this) OutFile6<<Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      else if (enb2_Address == this) OutFile7<<Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
 
       // woody
       m_assistInfoPtr->rlc_avg_buffer = averageBufferSize;
@@ -2225,9 +2225,9 @@ LteRlcAm::GetReportBufferStatus(LteMacSapProvider::ReportBufferStatusParameters 
     cc=1;
   }
 
-  if (enb1_Address ==this) OutFile8<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
-  else if(ue_Address==this) OutFile9<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
-  else if (enb2_Address == this) OutFile10<<this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<<(double)r.retxQueueHolDelay/1000.0 << std::endl;
+  if (enb1_Address ==this) OutFile8<< Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if(ue_Address==this) OutFile9<<Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if (enb2_Address == this) OutFile10<<Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<<(double)r.retxQueueHolDelay/1000.0 << std::endl;
 
   // woody
   m_assistInfoPtr->rlc_tx_queue = r.txQueueSize;

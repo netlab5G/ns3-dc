@@ -236,7 +236,7 @@ else { ////  the case of 1A and 3C
 
   // Sender timestamp
   PdcpTag pdcpTag (Simulator::Now ());
-  p->AddPacketTag (pdcpTag);
+  p->AddByteTag (pdcpTag);
   m_txPdu (m_rnti, m_lcid, p->GetSize ());
 
   LteRlcSapProvider::TransmitPdcpPduParameters params;
@@ -303,10 +303,11 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
     {
        delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();
     }
-
-/*  NS_ASSERT_MSG (p->PeekPacketTag (pdcpTag), "PdcpTag is missing");
+/*
+  NS_ASSERT_MSG (p->PeekPacketTag (pdcpTag), "PdcpTag is missing");
     p->RemovePacketTag (pdcpTag);
-    delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();*/
+    delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();
+*/
     m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
     LtePdcpHeader pdcpHeader;
@@ -591,7 +592,7 @@ LtePdcp::PdcpDelayCalculater(uint16_t SN){
   {
     OutFile0.open ("PdcpDelay_Measure.txt");
   }
-  OutFile0<< "SequenceNumber" << "\t" << SN <<"\t"<<"Delay" << "\t" << PdcpDelay.GetSeconds()<< "\t" << std::endl;
+  OutFile0<<Simulator::Now().GetSeconds()<< "\t" << "SequenceNumber" << "\t" << SN <<"\t"<<"Delay" << "\t" << PdcpDelay.GetSeconds()<< "\t" << std::endl;
 
   // woody
   m_assistInfoPtr->pdcp_sn = SN;

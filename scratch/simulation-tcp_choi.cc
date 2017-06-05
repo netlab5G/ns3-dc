@@ -295,8 +295,8 @@ main (int argc, char *argv[])
   if(isTcp)
   {
     Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
-    Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
+//    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
+    Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20* 1024 * 1024));
     Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (enablePDCPReordering));
     Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
   }
@@ -384,7 +384,7 @@ main (int argc, char *argv[])
   ueMobility.Install (ueNodes);
   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (distance/2, 0, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
-  Simulator::Schedule (Seconds (5), &ChangeSpeed, ueNodes.Get (0), Vector (velocity, 0, 0));
+  Simulator::Schedule (Seconds (4), &ChangeSpeed, ueNodes.Get (0), Vector (velocity, 0, 0));
   Simulator::Schedule (Seconds (15), &ChangeSpeed, ueNodes.Get (0), Vector (-1*velocity, 0, 0)); //sychoi 170530
 
   // Install LTE Devices to the nodes

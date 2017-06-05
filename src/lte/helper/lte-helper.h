@@ -651,6 +651,11 @@ private:
   Ptr<SpectrumChannel> m_downlinkChannel;
   /// The uplink LTE channel used in the simulation.
   Ptr<SpectrumChannel> m_uplinkChannel;
+ 
+ Ptr<SpectrumChannel> m_downlinkChannel_1;
+  /// The uplink LTE channel used in the simulation.
+  Ptr<SpectrumChannel> m_uplinkChannel_1;
+
   /// The path loss model used in the downlink channel.
   Ptr<Object> m_downlinkPathlossModel;
   /// The path loss model used in the uplink channel.

@@ -608,6 +608,7 @@ LteUeRrc::DoStartCellSelection (uint16_t dlEarfcn)
   NS_ASSERT_MSG (m_state == IDLE_START,
                  "cannot start cell selection from state " << ToString (m_state));
   m_dlEarfcn = dlEarfcn;
+//  std::cout<< dlEarfcn << std::endl; //sjkang
   m_cphySapProvider->StartCellSearch (dlEarfcn);
   SwitchToState (IDLE_CELL_SEARCH);
 }
@@ -616,7 +617,7 @@ void
 LteUeRrc::DoForceCampedOnEnb (uint16_t cellId, uint16_t dlEarfcn)
 {
   NS_LOG_FUNCTION (this << m_imsi << cellId << dlEarfcn);
-
+  //std::cout<< dlEarfcn << std::endl; //sjkang
   switch (m_state)
     {
     case IDLE_START:

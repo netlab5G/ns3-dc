@@ -105,6 +105,13 @@ TypeId LteUeNetDevice::GetTypeId (void)
                    MakeUintegerAccessor (&LteUeNetDevice::SetDlEarfcn,
                                          &LteUeNetDevice::GetDlEarfcn),
                    MakeUintegerChecker<uint16_t> (0, 6149))
+    .AddAttribute ("DlEarfcn_DC",
+                   "Downlink E-UTRA Absolute Radio Frequency Channel Number (EARFCN) for DC"
+                   "as per 3GPP 36.101 Section 5.7.3. ",
+                   UintegerValue (1000),
+                   MakeUintegerAccessor (&LteUeNetDevice::SetDlEarfcn_DC,
+                                         &LteUeNetDevice::GetDlEarfcn_DC),
+                   MakeUintegerChecker<uint16_t> (0, 6149))
     .AddAttribute ("CsgId",
                    "The Closed Subscriber Group (CSG) identity that this UE is associated with, "
                    "i.e., giving the UE access to cells which belong to this particular CSG. "
@@ -228,6 +235,20 @@ LteUeNetDevice::SetDlEarfcn (uint16_t earfcn)
 {
   NS_LOG_FUNCTION (this << earfcn);
   m_dlEarfcn = earfcn;
+}
+//sjkang0604
+uint16_t
+LteUeNetDevice::GetDlEarfcn_DC () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_dlEarfcn_DC;
+}
+
+void
+LteUeNetDevice::SetDlEarfcn_DC (uint16_t earfcn)
+{
+  NS_LOG_FUNCTION (this << earfcn);
+  m_dlEarfcn_DC = earfcn;
 }
 
 uint32_t

@@ -287,14 +287,14 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
-  Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
-  Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
+ Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
+   Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
 
   // These would be used as default in most cases
   if(isTcp)
   {
     Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-   Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true)); //codel
+  Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true)); //codel
     Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (enablePDCPReordering));
     Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
   }

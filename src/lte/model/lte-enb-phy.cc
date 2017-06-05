@@ -838,6 +838,7 @@ LteEnbPhy::GenerateDataCqiReport (const SpectrumValue& sinr)
 {
   NS_LOG_FUNCTION (this << sinr);
   FfMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi = CreatePuschCqiReport (sinr);
+// std::cout<< this<<"\t" <<  sinr << std::endl; //sjkang
   m_enbPhySapUser->UlCqiReport (ulcqi);
 }
 

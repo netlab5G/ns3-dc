@@ -28,6 +28,7 @@
 #include "ns3/double.h"
 #include "ns3/string.h"
 #include "ns3/pointer.h"
+#include "ns3/simulator.h"
 #include <cmath>
 
 namespace ns3 {
@@ -454,7 +455,8 @@ TwoRayGroundPropagationLossModel::DoAssignStreams (int64_t stream)
 // ------------------------------------------------------------------------- //
 
 NS_OBJECT_ENSURE_REGISTERED (LogDistancePropagationLossModel);
-
+Ptr<LogDistancePropagationLossModel> lossAddress;
+int c_L =0;
 TypeId
 LogDistancePropagationLossModel::GetTypeId (void)
 {
@@ -484,6 +486,7 @@ LogDistancePropagationLossModel::GetTypeId (void)
 
 LogDistancePropagationLossModel::LogDistancePropagationLossModel ()
 {
+if (c_L ==0) {lossAddress = this; c_L=1;}
 }
 
 void
@@ -527,9 +530,11 @@ LogDistancePropagationLossModel::DoCalcRxPower (double txPowerDbm,
    *
    * rx = rx0(tx) - 10 * n * log (d/d0)
    */
+//if (lossAddress== this && Simulator::Now().GetSeconds() > 5.0 ) m_referenceLoss= 100;   
   double pathLossDb = 10 * m_exponent * std::log10 (distance / m_referenceDistance);
   double rxc = -m_referenceLoss - pathLossDb;
-  NS_LOG_DEBUG ("distance="<<distance<<"m, reference-attenuation="<< -m_referenceLoss<<"dB, "<<
+//if (lossAddress== this && Simulator::Now().GetSeconds() > 5.0 && Simulator::Now().GetSeconds()<7) rxc-=30;  //sjkang
+NS_LOG_DEBUG ("distance="<<distance<<"m, reference-attenuation="<< -m_referenceLoss<<"dB, "<<
                 "attenuation coefficient="<<rxc<<"db");
   return txPowerDbm + rxc;
 }
