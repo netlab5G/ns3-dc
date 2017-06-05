@@ -261,4 +261,9 @@ LteRlcTm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
   return;
 }
 
+void
+LteRlcTm::CalculatePathThroughput (std::ofstream *streamPathThroughput){
+  NS_FATAL_ERROR ("Not implemented yet");
+}
+
 } // namespace ns3

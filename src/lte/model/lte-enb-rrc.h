@@ -117,7 +117,7 @@ public:
     void UpdateEthas(); //sjkang
 	 double sigma = 0.01; //sjkang
 	double alpha =1/99.0; //sjkang
-	double targetQueueSize = 89500.0;
+	double targetQueueSize = 89500.0; // sjkang
   /** 
    * Set the identifiers of the source eNB for the case where a UE
    * joins the current eNB as part of a handover procedure 

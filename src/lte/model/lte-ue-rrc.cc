@@ -36,6 +36,8 @@
 
 #include <cmath>
 
+#include <fstream> // woody
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteUeRrc");
@@ -145,6 +147,7 @@ LteUeRrc::LteUeRrc ()
   m_drbPdcpSapUser = new LtePdcpSpecificLtePdcpSapUser<LteUeRrc> (this);
   m_asSapProvider = new MemberLteAsSapProvider<LteUeRrc> (this);
   m_isDc = false; // woody
+  objectCounter = 0; // woody
 }
 
 
@@ -1322,9 +1325,13 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
 		SetLteRlcSapUserDc (drbInfo->m_drbIdentity, pdcp->GetLteRlcSapUser());
 
                 rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser());
+                std::ofstream* streamPathThroughput = new std::ofstream("_0_path_throughput.txt");
+                if(drbInfo->m_drbIdentity == 2) rlc->CalculatePathThroughput(streamPathThroughput);
               }
               else{
                 rlc->SetLteRlcSapUser (itRlc->second);
+                std::ofstream* streamPathThroughput = new std::ofstream("_1_path_throughput.txt");
+                if(drbInfo->m_drbIdentity == 2) rlc->CalculatePathThroughput(streamPathThroughput);
               }
 
 //	      if(m_rlcSapUserDc){

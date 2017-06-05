@@ -61,6 +61,7 @@ public:
   virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr); // woody
   virtual void IsEnbRlc (void); // woody
   virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc); // woody
+  virtual void CalculatePathThroughput (std::ofstream *streamPathThroughput); // woody
 
 private:
   void ExpireRbsTimer (void);

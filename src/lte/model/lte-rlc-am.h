@@ -73,6 +73,7 @@ public:
   virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
   virtual void IsEnbRlc (void);
   virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc);
+  virtual void CalculatePathThroughput (std::ofstream *streamPathThroughput);
 
 private:
   // woody
@@ -80,6 +81,8 @@ private:
   bool m_isEnbRlc;
   Ptr<LteEnbRrc> m_enbRrc;
   Ptr<LteUeRrc> m_ueRrc;
+  uint32_t sumPacketSize;
+  uint32_t lastSumPacketSize;
 
   /**
    * This method will schedule a timeout at WaitReplyTimeout interval

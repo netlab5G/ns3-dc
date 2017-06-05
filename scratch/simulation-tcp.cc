@@ -204,7 +204,7 @@ CalculateThroughput ()
 {
   Time now = Simulator::Now ();                                         /* Return the simulator's virtual time. */
   double cur = (sink->GetTotalRx () - lastTotalRx) * (double) 8 / 1e5;     /* Convert Application RX Packets to MBits. */
-  *streamThroughput  << now.GetSeconds () << "\t" << cur << " Mbit/s" << std::endl;
+  *streamThroughput  << now.GetSeconds () << "\t" << cur <<std::endl;
   lastTotalRx = sink->GetTotalRx ();
   Simulator::Schedule (MilliSeconds (100), &CalculateThroughput);
 }
@@ -258,7 +258,8 @@ main (int argc, char *argv[])
 
   NS_LOG_UNCOND("Simulation Setting");
   NS_LOG_UNCOND(" -simTime(s) = " << simTime);
-  NS_LOG_UNCOND(" -App = TCP");
+  if (isTcp)  NS_LOG_UNCOND(" -App = TCP");
+  else NS_LOG_UNCOND(" -App = UDP");
   NS_LOG_UNCOND(" -dcType = " << (unsigned) dcType);
   NS_LOG_UNCOND(" -splitAlgorithm = " << (unsigned) splitAlgorithm);
   NS_LOG_UNCOND(" -pdcpReorderingTimer(ms) = " << (unsigned) pdcpReorderingTimer);
@@ -294,15 +295,17 @@ main (int argc, char *argv[])
   if(isTcp)
   {
     Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-  Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true)); //codel
+    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
+    Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
     Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (enablePDCPReordering));
     Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));
   }
   else
   {
     Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_UM_ALWAYS));
+    Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
+    Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (false));
   }
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
   Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (1000));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
