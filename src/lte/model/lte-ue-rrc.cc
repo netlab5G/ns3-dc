@@ -1163,7 +1163,7 @@ void
 LteUeRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
   static const Time delay = MilliSeconds (0);
-  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
+  if (m_assistInfoSinkEnb == NULL && m_assistInfoSinkPgw == NULL) return;
 
   if (m_assistInfoSinkEnb != 0) Simulator::Schedule (delay, &LteEnbRrc::RecvAssistInfo, m_assistInfoSinkEnb, assistInfo);
   else Simulator::Schedule (delay, &EpcSgwPgwApplication::RecvAssistInfo, m_assistInfoSinkPgw, assistInfo);

@@ -287,7 +287,7 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   Address from;
   Ptr<Packet> packet = socket->RecvFrom (from);
 
-  NS_LOG_INFO ("***EnB, " << Simulator::Now ().GetSeconds () << "s "
+  NS_LOG_INFO ("**EnB, " << Simulator::Now ().GetSeconds () << "s "
               <<  packet->GetSize () << " bytes from "
               << InetSocketAddress::ConvertFrom(from).GetIpv4 ()
               << " port " << InetSocketAddress::ConvertFrom (from).GetPort ());

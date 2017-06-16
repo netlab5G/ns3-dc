@@ -288,8 +288,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::UeManager::SplitAlgorithm", UintegerValue (splitAlgorithm));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate("1Gb/s")));
- Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
-   Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Interval", StringValue ("500ms"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Target", StringValue ("50ms"));
 
   // These would be used as default in most cases
   if(isTcp)
@@ -394,7 +394,7 @@ main (int argc, char *argv[])
 
   lteHelper->NotifyEnbNeighbor (enbNodes.Get(0), senbNodes.Get(0)); // woody3C
 
-  lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0), dcType); // woody
+  if (dcType == 2 || dcType == 3) lteHelper->ConnectAssistInfo (enbNodes.Get(0), senbNodes.Get(0), ueNodes.Get(0), dcType); // woody
 
   // Install the IP stack on the UEs
   NS_LOG_UNCOND("# install the IP stack on the UEs");
@@ -434,7 +434,7 @@ main (int argc, char *argv[])
     PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPortDc));
     ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
 
-    sinkApps.Start (Seconds (0.));
+    sinkApps.Start (Seconds (0.1));
     sinkApps.Stop (Seconds (simTime));
 
     Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
@@ -456,6 +456,26 @@ main (int argc, char *argv[])
     streamThroughput = new std::ofstream(outputName + "_throughput.txt");
     Simulator::Schedule (Seconds (startTime), &CalculateThroughput);
 
+    if (dcType == 1)
+    {
+      uint16_t dlPort1A = 1234;
+      Address sinkAddress1A (InetSocketAddress (ueIpIface.GetAddress (0), dlPort1A));
+      PacketSinkHelper packetSinkHelper1A ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort1A));
+      sinkApps.Add (packetSinkHelper1A.Install (ueNodes.Get (0)));
+
+      sinkApps.Start (Seconds (0.1));
+      sinkApps.Stop (Seconds (simTime));
+
+      Ptr<Socket> ns3TcpSocket1A = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
+      Ptr<MyApp> app1A = CreateObject<MyApp> ();
+      app1A->Setup (ns3TcpSocket1A, sinkAddress1A, 1400, 5000000, DataRate ("300Mb/s"));
+
+      remoteHostContainer.Get (0)->AddApplication (app1A);
+      app1A->SetStartTime (Seconds (startTime));
+      app1A->SetStopTime (Seconds (simTime));
+ 
+    }
+
     //Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
     //ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
     app->SetStartTime (Seconds (startTime));
@@ -469,17 +489,43 @@ main (int argc, char *argv[])
     PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPortDc));
     ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
 
-    sinkApps.Start (Seconds (0.));
+    sinkApps.Start (Seconds (0.1));
     sinkApps.Stop (Seconds (simTime));
 
     Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
     Ptr<MyApp> app = CreateObject<MyApp> ();
-    app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("300Mb/s"));
-
+    app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("1Mb/s"));
     remoteHostContainer.Get (0)->AddApplication (app);
+
+/*    ApplicationContainer clientApps;
+    UdpClientHelper dlClient (ueIpIface.GetAddress (0), dlPortDc);
+    dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(1000)));
+    dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+    clientApps.Add (dlClient.Install (remoteHostContainer.Get (0)));
+    clientApps.Start (Seconds (0.));*/
+
     AsciiTraceHelper asciiTraceHelper;
     Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream (outputName + "_udp_data.txt");
     sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
+
+    if (dcType == 1)
+    {
+      uint16_t dlPort1A = 1234;
+      Address sinkAddress1A (InetSocketAddress (ueIpIface.GetAddress (0), dlPort1A));
+      PacketSinkHelper packetSinkHelper1A ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort1A));
+      sinkApps.Add (packetSinkHelper1A.Install (ueNodes.Get (0)));
+
+      sinkApps.Start (Seconds (0.1));
+      sinkApps.Stop (Seconds (simTime));
+
+      Ptr<Socket> ns3UdpSocket1A = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
+      Ptr<MyApp> app1A = CreateObject<MyApp> ();
+      app1A->Setup (ns3UdpSocket1A, sinkAddress1A, 1400, 5000000, DataRate ("1Mb/s"));
+
+      remoteHostContainer.Get (0)->AddApplication (app1A);
+      app1A->SetStartTime (Seconds (startTime));
+      app1A->SetStopTime (Seconds (simTime));
+    }
 
     app->SetStartTime (Seconds (startTime));
     app->SetStopTime (Seconds (simTime));

@@ -2824,7 +2824,7 @@ void
 LteEnbRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
   NS_LOG_FUNCTION (this);
   static const Time delay = MilliSeconds (0);
-  NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
+  if (m_assistInfoSinkEnb == NULL && m_assistInfoSinkPgw == NULL) return;
 
   if (m_isMenb) assistInfo.is_menb = true;
   else assistInfo.is_menb = false;

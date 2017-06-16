@@ -2296,6 +2296,7 @@ PfFfMacScheduler::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
 
   if(m_assistInfoPtr == NULL)
   {
+    if (m_rrc == NULL) return;
     m_assistInfoPtr = m_rrc->GetAssistInfoPtr ();
     if (m_assistInfoPtr == NULL) return;
   }

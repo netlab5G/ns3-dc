@@ -241,6 +241,7 @@ EpcUeNas::Send (Ptr<Packet> packet)
         else
           {
             m_asSapProvider->SendData (packet, bid); 
+            if (m_asSapProviderDc) m_asSapProviderDc->SendData (packet, bid); // woody 
             return true;
           }
       }

@@ -369,7 +369,6 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
         }
       else
         {
-
     	  /** sychoi, modified by woody
     	   * Here, we need to implement the branch point for selecting the next eNB to steer DL packet.
     	   * Using newly defined map, m_dcEnbAddrByTeidMap, find the SeNB address, senbAddr.
@@ -383,11 +382,17 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
           }
           else if(it->second->dcType == 1){
             std::map<uint32_t, Ipv4Address>::iterator senbAddrIt = m_dcEnbAddrByTeidMap.find (teid);
-            Ipv4Address senbAddr = senbAddrIt->second;
-            if (senbAddrIt == m_dcEnbAddrByTeidMap.end ()) NS_FATAL_ERROR("Cannot find senbAddr");
-
-            NS_LOG_INFO ("***SgwPgw send to SeNB " << senbAddr << " with teid " << teid);
-            SendToS1uSocket (packet, senbAddr, teid);
+            if (senbAddrIt == m_dcEnbAddrByTeidMap.end ())
+            {
+              NS_LOG_INFO ("***SgwPgw send to MeNB " << enbAddr << " with teid " << teid);
+              SendToS1uSocket (packet, enbAddr, teid);
+            }
+            else
+            {
+              Ipv4Address senbAddr = senbAddrIt->second;
+              NS_LOG_INFO ("***SgwPgw send to SeNB " << senbAddr << " with teid " << teid);
+              SendToS1uSocket (packet, senbAddr, teid);
+            }
           }
           else if(it->second->dcType == 3){
             int t_splitter = SplitAlgorithm();
@@ -524,29 +529,28 @@ EpcSgwPgwApplication::DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequest
       NS_ABORT_IF (m_teidCount == 0xFFFFFFFF);
       uint32_t teid = ++m_teidCount;  
       ueit->second->AddBearer (bit->tft, bit->epsBearerId, teid);
-
       ueit->second->dcType = bit->dcType;
       // if the bearer type is DC, add list eNB addr into SenbMap
       if(bit->dcType == 0 || bit->dcType == 2) { // woody3C
-          NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+          NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType << " teid " << teid);
           ueit->second->SetEnbAddr (enbAddr);
       }
       else if(bit->dcType == 1) {  // woody
-          NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+          NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType << " teid " << teid);
           ueit->second->SetSenbAddr (enbAddr); // woody, actually SetSenbAddr is currently not utilized
           m_dcEnbAddrByTeidMap[teid] = enbAddr;
       }
       else if(bit->dcType == 3) {  // woody1X
           if (req.isSenb == 1)
           {
-            NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+            NS_LOG_FUNCTION ("SetSenbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType << " teid " << teid);
             ueit->second->SetSenbAddr (enbAddr); // woody, actually SetSenbAddr is currently not utilized
             m_dcEnbAddrByTeidMap[teid] = enbAddr;
  
           }
           else
           {
-            NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType);
+            NS_LOG_FUNCTION ("SetEnbAddr " << enbAddr << " dcType " << (unsigned)bit->dcType << " teid " << teid);
             ueit->second->SetEnbAddr (enbAddr);
           }
       }

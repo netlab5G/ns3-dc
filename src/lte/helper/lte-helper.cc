@@ -1262,7 +1262,7 @@ LteHelper::Attach (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
 
   if (m_epcHelper != 0)
     {
-      // activate default EPS bearer
+      // woody, manually activate default EPS bearer
       Ptr<EpcTft> tftDc = Create<EpcTft> ();
       EpcTft::PacketFilter tftPacketFilter;
       tftPacketFilter.localPortStart = 1234;
