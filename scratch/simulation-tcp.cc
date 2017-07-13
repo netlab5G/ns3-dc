@@ -34,7 +34,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
+#include "ns3/tcp-congestion-ops.h"
 using namespace ns3;
 
 /**
@@ -269,7 +269,7 @@ main (int argc, char *argv[])
 //  LogComponentEnable ("PointToPointEpcHelper", LOG_FUNCTION);
 //  LogComponentEnable ("EpcEnbApplication", LOG_FUNCTION);
 //  LogComponentEnable ("EpcSgwPgwApplication", LOG_FUNCTION);
-
+//    LogComponentEnable("TcpSocketBase",LOG_FUNCTION);
   if (log_packetflow){
     LogComponentEnable ("EpcEnbApplication", LOG_INFO);
     LogComponentEnable ("EpcSgwPgwApplication", LOG_INFO);
@@ -295,7 +295,7 @@ main (int argc, char *argv[])
   if(isTcp)
   {
     Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
+ //    Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue (true));
     Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
     Config::SetDefault ("ns3::LtePdcp::EnablePDCPReordering", BooleanValue (enablePDCPReordering));
     Config::SetDefault ("ns3::LtePdcp::ExpiredTime",TimeValue(MilliSeconds(pdcpReorderingTimer)));

@@ -174,9 +174,9 @@ EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t ims
   std::map<uint16_t, Ptr<EnbInfo> >::iterator jt = m_enbInfoMap.find (gci);
   NS_ASSERT_MSG (jt != m_enbInfoMap.end (), "could not find any eNB with CellId " << gci);
   uint8_t enbType = jt->second->enbType;
-
   if (enbType == 0){
     it->second->cellId = gci;
+
     for (std::list<BearerInfo>::iterator bit = it->second->bearersToBeActivated.begin ();
          bit != it->second->bearersToBeActivated.end ();
          ++bit)
@@ -190,8 +190,11 @@ EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t ims
         msg.bearerContextsToBeCreated.push_back (bearerContext);
       }
     msg. uli.gci = gci;
+    msg.isMenb =1;  //sjkang
+
   }
   else if (enbType == 1){
+	//  std::cout<< "enbType--> " << enbType << " gci " << gci<< std::endl;
     uint8_t dcType;
     it->second->cellIdDc = gci; // woody
     for (std::list<BearerInfo>::iterator bit = it->second->bearersToBeActivatedDc.begin ();
@@ -217,10 +220,20 @@ EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t ims
       msg. isSenb = 1;
     }
     else {NS_FATAL_ERROR ("unimplemented DC type");}
+
   }
   else {NS_FATAL_ERROR ("invalid eNB type");}
 
- m_s11SapSgw->CreateSessionRequest (msg);
+  if (it->second->cellId ==0 && it->second->cellIdDc !=0)  //sjkang0711
+     WaitingForCellId[imsi]=msg;  //store msg to seng temporarlly
+  else if(it->second->cellId!=0 && WaitingForCellId.find(imsi)== WaitingForCellId.end()) //sjkang0713
+	//  WaitingForCellId[imsi]=msg;  //store msg to seng temporarlly
+	  m_s11SapSgw->CreateSessionRequest (msg);
+  else if (it->second->cellId!=0 && WaitingForCellId.find(imsi)!= WaitingForCellId.end()) //sjkang0713
+  {
+	  m_s11SapSgw->CreateSessionRequest (msg); //sjkang0713
+  	  m_s11SapSgw->CreateSessionRequest (WaitingForCellId[imsi]); //sjkang0713
+  }
 }
 
 void 
@@ -275,9 +288,10 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
     }
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
-
+  std::cout<< "-------------->" << imsi << " ::::: " <<it->second->cellId << ":::::" <<it->second->cellIdDc << std::endl;
   if (dcType == 0) {
     cellId = it->second->cellId;
+   // std::cout << cellId << std::endl;
     uint16_t enbUeS1Id = it->second->enbUeS1Id;
     uint64_t mmeUeS1Id = it->second->mmeUeS1Id;
     std::map<uint16_t, Ptr<EnbInfo> >::iterator jt = m_enbInfoMap.find (cellId);
@@ -295,10 +309,14 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
   else if (dcType == 2 || dcType == 3) { // woody3C, woody1X
     cellId = it->second->cellId;
     uint16_t enbUeS1Id = it->second->enbUeS1Id;
-    uint64_t mmeUeS1Id = it->second->mmeUeS1Id;
+     uint64_t mmeUeS1Id = it->second->mmeUeS1Id;
+
+  //  if (it->second->cellId != 0 ){ //sjkang
     std::map<uint16_t, Ptr<EnbInfo> >::iterator jt = m_enbInfoMap.find (cellId);
     NS_ASSERT_MSG (jt != m_enbInfoMap.end (), "could not find any eNB with CellId " << cellId);
     jt->second->s1apSapEnb->InitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupList);
+//   }
+
 
     std::list<EpcS1apSapEnb::ErabToBeSetupItem> erabToBeSetupListDc;
     for (std::list<EpcS11SapMme::BearerContextCreated>::iterator bit = msg.bearerContextsCreated.begin ();
@@ -318,8 +336,9 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
     cellIdDc = it->second->cellIdDc;
     std::map<uint16_t, Ptr<EnbInfo> >::iterator jtDc = m_enbInfoMap.find (cellIdDc);
     NS_ASSERT_MSG (jtDc != m_enbInfoMap.end (), "could not find any eNB with CellIdDc " << cellIdDc);
-    jtDc->second->s1apSapEnb->InitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupList);
+    jtDc->second->s1apSapEnb->InitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupListDc);
   }
+
   else {NS_FATAL_ERROR ("unimplemented DC type");}
 }
 

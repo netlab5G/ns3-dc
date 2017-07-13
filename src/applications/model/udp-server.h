@@ -28,7 +28,12 @@
 #include "ns3/ptr.h"
 #include "ns3/address.h"
 #include "packet-loss-counter.h"
+#include "ns3/traced-callback.h"
+
 namespace ns3 {
+class Address;
+class Socket;
+class Packet;
 /**
  * \ingroup applications
  * \defgroup udpclientserver UdpClientServer
@@ -80,7 +85,8 @@ public:
   void SetPacketWindowSize (uint16_t size);
 protected:
   virtual void DoDispose (void);
-
+  TracedCallback<Ptr<const Packet>, uint32_t> m_rxTrace ;  //sjkang
+  TracedCallback<uint32_t> m_loss;
 private:
 
   virtual void StartApplication (void);
@@ -100,6 +106,7 @@ private:
   Ptr<Socket> m_socket6; //!< IPv6 Socket
   uint64_t m_received; //!< Number of received packets
   PacketLossCounter m_lossCounter; //!< Lost packet counter
+
 };
 
 } // namespace ns3

@@ -1208,7 +1208,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           rlc->SetLteMacSapProvider (m_macSapProvider);
           rlc->SetRnti (m_rnti);
           rlc->SetLcId (lcid);      
-
+         // rlc->GetObject<LteRlcAm>()->SetImsi(GetImsi()); //sjkang0710
           Ptr<LtePdcp> pdcp = CreateObject<LtePdcp> ();
           pdcp->SetRnti (m_rnti);
           pdcp->SetLcId (lcid);
@@ -1292,6 +1292,11 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           rlc->SetLteMacSapProvider (m_macSapProvider);
           rlc->SetRnti (m_rnti);
           rlc->SetLcId (dtamIt->logicalChannelIdentity);
+          ///sjkang
+         // if (rlcTypeId == LteRlcAm::GetTypeId()){
+        	//  rlc->GetObject<LteRlcAm>()->SetImsi(GetImsi());
+         // }
+
 
           Ptr<LteDataRadioBearerInfo> drbInfo = CreateObject<LteDataRadioBearerInfo> ();
           drbInfo->m_rlc = rlc;

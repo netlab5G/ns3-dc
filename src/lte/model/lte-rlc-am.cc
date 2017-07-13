@@ -42,8 +42,9 @@ NS_OBJECT_ENSURE_REGISTERED (LteRlcAm);
 
 LteRlcAm::LteRlcAm ()
 {
-  NS_LOG_FUNCTION (this);
 
+  NS_LOG_FUNCTION (this);
+ //std::cout<< " rlcam address " <<  this << std::endl;
   // Buffers
   m_txonBufferSize = 0;
   m_retxSegBuffer.resize (1024);
@@ -148,10 +149,11 @@ LteRlcAm::GetTypeId (void)
 				   MakeBooleanAccessor (&LteRlcAm::m_enableAqm),
 				   MakeBooleanChecker ())
 
+
     ;
   return tid;
 }
-
+int enb1_, enb2_, ue_; //sjkang
 void
 LteRlcAm::DoDispose ()
 {
@@ -171,8 +173,10 @@ LteRlcAm::DoDispose ()
   m_sdusBuffer.clear ();
   m_keepS0 = 0;
   m_controlPduBuffer = 0;
-
+//std::cout << "Menb callling number -->" << enb1_ << "  Senb calling number---> "  << enb2_ << " UE callling numver -----> " << ue_ << std::endl; //sjkang
   LteRlc::DoDispose ();
+
+
 }
 
 
@@ -238,7 +242,8 @@ NS_LOG_UNCOND ("TxBuffer is full. RLC SDU discarded");
   }
 
   GetBufferSize(); // sjkang
-
+  //m_RlcBufferSize((int)m_txonBufferSize,(int)m_txedBufferSize,(int)m_retxBufferSize); //sjkang0705
+ // m_RlcBufferSize(m_txonBufferSize,m_retxBufferSize); //sjkang0705
   /** Report Buffer Status */
   DoReportBufferStatus ();
   m_rbsTimer.Cancel ();
@@ -249,12 +254,26 @@ NS_LOG_UNCOND ("TxBuffer is full. RLC SDU discarded");
 /**
  * MAC SAP
  */
-
+Ptr<LteRlcAm> enb1_Address,ue_Address,enb2_Address;
+//int enb1_, enb2_;
 void
 LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
+NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
 
+//std::cout << enb1_Address << "  " << ue_Address << "  " << enb2_Address << std::endl;
+if (isMenb){
+ //  std::cout << Simulator::Now().GetSeconds() << "Menb --->" <<this << "  " << bytes << std::endl;  //sjkang
+    enb1_++;
+    }
+else if (isSenb){
+ // std::cout<< Simulator::Now().GetSeconds() <<"Senb---->"<< this <<"  "  << bytes <<  std::endl;
+   enb2_ ++;
+ }
+else {
+//std::cout<< Simulator::Now().GetSeconds() <<"UE---->"<< this <<"  "  << bytes <<  std::endl;
+   ue_ ++;
+}
   if (bytes < 4)
     {
       // Stingy MAC: In general, we need more bytes.
@@ -2133,16 +2152,16 @@ LteRlcAm::ExpireRbsTimer (void)
 
 // sjkang, the implementation for extracting parameters
 
-std::ofstream OutFile5("enb1_BuffersizefromSampling.txt");
+std::ofstream OutFile5("Senb_BuffersizefromSampling.txt");
 std::ofstream OutFile6("ue_BuffersizefromSampling.txt");
-std::ofstream OutFile7("enb2_BuffersizefromSampling.txt");
+std::ofstream OutFile7("Menb_BuffersizefromSampling.txt");
 
-std::ofstream OutFile8("enb1_BuffersizeAndDelay.txt");
+std::ofstream OutFile8("Senb_BuffersizeAndDelay.txt");
 std::ofstream OutFile9("ue_BuffersizeAndDelay.txt");
-std::ofstream OutFile10("enb2_BuffersizeAndDelay.txt");
+std::ofstream OutFile10("Menb_BuffersizeAndDelay.txt");
 
 // declaration for distinguishing the addresses (UE, Menb, Senb)
-Ptr <ns3::LteRlcAm> enb1_Address,ue_Address,enb2_Address;
+//Ptr <ns3::LteRlcAm> enb1_Address,ue_Address,enb2_Address;
 
 // the function for getting moving average value of total buffer size( transmission + retransmission)
 double
@@ -2195,9 +2214,9 @@ LteRlcAm::GetBufferSize(){
 
       averageBufferSize =(double)sum/10.0;
 
-      if (enb1_Address ==this) OutFile5<< Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      if (isSenb) OutFile5<< Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
       else if(ue_Address==this) OutFile6<<Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
-      else if (enb2_Address == this) OutFile7<<Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
+      else if (isMenb) OutFile7<<Simulator::Now().GetSeconds()<< "\t" <<this << "\t"<< SamplingTime.GetSeconds() << "\t" << averageBufferSize << std::endl;
 
       // woody
       m_assistInfoPtr->rlc_avg_buffer = averageBufferSize;
@@ -2217,7 +2236,7 @@ LteRlcAm::GetBufferSize(){
 
 /// the function for taking the information from the DoReportBufferStatus
 int cc=0;
-
+std::map<uint16_t, Ptr<OutputStreamWrapper>> FileStremFromImsi;//sjkang
 void
 LteRlcAm::GetReportBufferStatus(LteMacSapProvider::ReportBufferStatusParameters r){
   NS_LOG_FUNCTION(this);
@@ -2227,9 +2246,14 @@ LteRlcAm::GetReportBufferStatus(LteMacSapProvider::ReportBufferStatusParameters 
     cc=1;
   }
 
-  if (enb1_Address ==this) OutFile8<< Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+  if (isSenb) OutFile8<< Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
   else if(ue_Address==this) OutFile9<<Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
-  else if (enb2_Address == this) OutFile10<<Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<<(double)r.retxQueueHolDelay/1000.0 << std::endl;
+  else if (isMenb) OutFile10<<Simulator::Now().GetSeconds()<< "\t" << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<<(double)r.retxQueueHolDelay/1000.0 << std::endl;
+
+ //if(!isSenb && !isMenb) //sjkang0710
+  //*FileStremFromImsi[m_imsi]->GetStream()<<Simulator::Now().GetSeconds()<< "\t"
+	//  << this<<"\t"<< r.txQueueSize << "\t" <<r.retxQueueSize <<"\t" <<(double)r.txQueueHolDelay/1000.0 << "\t"<< (double)r.retxQueueHolDelay/1000.0 << std::endl;
+
 
   // woody
   m_assistInfoPtr->rlc_tx_queue = r.txQueueSize;
@@ -2256,6 +2280,7 @@ void
 LteRlcAm::SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr){ // woody
   NS_LOG_FUNCTION (this);
   m_assistInfoPtr = assistInfoPtr;
+
 }
 
 void
@@ -2265,6 +2290,8 @@ LteRlcAm::SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc) // woody
   m_enbRrc = enbRrc;
   m_ueRrc = ueRrc;
 }
+//uint8_t check=0;
+
 
 void
 LteRlcAm::CalculatePathThroughput (std::ofstream *stream) // woody
@@ -2275,5 +2302,27 @@ LteRlcAm::CalculatePathThroughput (std::ofstream *stream) // woody
   lastSumPacketSize = sumPacketSize;
   Simulator::Schedule (MilliSeconds (100), &LteRlcAm::CalculatePathThroughput, this, stream);
 }
+void
+LteRlcAm::SetRlcAmIdentity(uint16_t imsi, uint16_t bearerId, bool isMenb, bool isMmenb){ //sjkang0713
+        std::ostringstream fileName;
+        if(isMenb){
+        fileName<<"Menb-"<<"UE-"<<imsi <<"-"<< bearerId <<"-RLC-DATA.txt";
+        }else if(isMmenb){
+        fileName<<"Senb-"<<"UE-"<<imsi <<"-"<< bearerId <<"-RLC-DATA.txt";
+                        }
+                        AsciiTraceHelper asciiTraceHelper;
+ FileStremFromRlcAddress[this] =
+                 asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
+ *FileStremFromRlcAddress[this]->GetStream()<< "time "<<"\t" <<"txonBufferSize"
+                 <<"\t"<<"txedBufferSize" << "\t"<<"retxBufferSize" <<"\t" <<"reciveBufferSize" <<std::endl;
+          ReportRlcBufferSizeForUE();
+}
+void
+LteRlcAm::ReportRlcBufferSizeForUE(){ //sjkang0712
 
+          *FileStremFromRlcAddress[this]->GetStream()<<Simulator::Now().GetSeconds()<< " \t   "
+                  << m_txonBufferSize << "  \t    " << m_txedBufferSize << "  \t              " << m_retxBufferSize
+                 <<"  \t            "<<m_rxonBuffer.size()  << std::endl;
+         Simulator::Schedule (MilliSeconds (100), &LteRlcAm::ReportRlcBufferSizeForUE, this);
+}
 } // namespace ns3

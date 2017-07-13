@@ -314,7 +314,7 @@ main (int argc, char *argv[])
   cmd.Parse(argc, argv);
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
-  pgw->GetApplication (0) -> GetObject<EpcSgwPgwApplication> () -> SetSplitAlgorithm(splitAlgorithm); // woody
+  pgw->GetApplication(0) -> GetObject<EpcSgwPgwApplication> () -> SetSplitAlgorithm(splitAlgorithm); // woody
 
    // Create a single RemoteHost
   NS_LOG_UNCOND("# Create a remote host");
@@ -361,7 +361,7 @@ main (int argc, char *argv[])
 
   MobilityHelper mobility;
   mobility.SetPositionAllocator (positionAlloc);
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
   mobility.Install (enbNodes);
   mobility.Install (senbNodes);
   mobility.Install (ueNodes);

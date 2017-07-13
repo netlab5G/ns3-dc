@@ -52,7 +52,7 @@ class LteSignalingRadioBearerInfo;
 class LteDataRadioBearerInfo;
 class LteEnbRrc;
 class Packet;
-
+class LteRlcAm;
 
 
 /**
@@ -118,6 +118,8 @@ public:
 	 double sigma = 0.01; //sjkang
 	double alpha =1/99.0; //sjkang
 	double targetQueueSize = 89500.0; // sjkang
+	Ptr<LteRlcAm>  m_rlcAM;  //sjkang
+
   /** 
    * Set the identifiers of the source eNB for the case where a UE
    * joins the current eNB as part of a handover procedure 
@@ -339,7 +341,7 @@ public:
   void RecvAssistInfo (LteRrcSap::AssistInfo assistInfo); // woody
 
   int SplitAlgorithm (); // woody
-
+  std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > GetDrb(); //sjkang0712
 private:
 
   uint16_t m_dcCell; // woody3C
@@ -553,13 +555,13 @@ public:
    *
    */
   LteEnbRrc ();
-
+  void SetBandwidth(); //sjkang0626
   /**
    * Destructor
    */
   virtual ~LteEnbRrc ();
 
-
+  void Traces();
   // inherited from Object
 protected:
   virtual void DoDispose (void);
@@ -578,7 +580,7 @@ public:
   void SetAssistInfoPtr (LteRrcSap::AssistInfo *assistInfo); // woody
   LteRrcSap::AssistInfo *m_assistInfoPtr; // woody
 
-
+  bool isSenb=false, isMenb =false; //sjkang0705
 
   /**
    * Set the X2 SAP this RRC should interact with
@@ -909,7 +911,7 @@ public:
 private:
 
   bool m_isMenb; // woody
-
+  int c_c=0, c__c=0; //sjkang
   Ptr<LteEnbRrc> m_assistInfoSinkEnb; // woody
   Ptr<EpcSgwPgwApplication> m_assistInfoSinkPgw; // woody
 

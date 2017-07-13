@@ -113,6 +113,10 @@ TypeId LteRlc::GetTypeId (void)
                      "PDU received.",
                      MakeTraceSourceAccessor (&LteRlc::m_rxPdu),
                      "ns3::LteRlc::ReceiveTracedCallback")
+	/*.AddTraceSource ("RlcBufferSize",
+					 			"RlcAm buffer size: txonBuffersize, txedBuffersize, retxBuffersize"
+					 			,  MakeTraceSourceAccessor (&LteRlc::m_RlcBufferSize),
+					 			"ns3::LteRcl::RlcBufferSize")*/
     ;
   return tid;
 }

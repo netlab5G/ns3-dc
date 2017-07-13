@@ -122,6 +122,7 @@ def build(bld):
         'model/lte-ffr-distributed-algorithm.cc',
         'model/lte-ue-power-control.cc',
         'model/Gtpu_SN_Header.cc',
+        'model/buildings-obstacle-propagation-loss-model.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('lte')
@@ -298,6 +299,7 @@ def build(bld):
         'model/lte-ffr-distributed-algorithm.h',     
         'model/lte-ue-power-control.h',           
         'model/Gtpu_SN_Header.h',
+         'model/buildings-obstacle-propagation-loss-model.h',
         ]
 
     if (bld.env['ENABLE_EMU']):

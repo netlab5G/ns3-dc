@@ -308,6 +308,7 @@ LtePdcp::DoReceivePdu (Ptr<Packet> p)
     p->RemovePacketTag (pdcpTag);
     delay = Simulator::Now() - pdcpTag.GetSenderTimestamp ();
 */
+    //if ( Simulator::Now().GetSeconds() > 5.0 && Simulator::Now().GetSeconds()<7.0) return;
     m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
     LtePdcpHeader pdcpHeader;

@@ -27,7 +27,7 @@
 #include <ns3/attribute-accessor-helper.h>
 #include <ns3/double.h>
 
-
+#include <fstream>
 #include "lte-enb-phy.h"
 #include "lte-ue-phy.h"
 #include "lte-net-device.h"
@@ -830,6 +830,7 @@ LteEnbPhy::GenerateCtrlCqiReport (const SpectrumValue& sinr)
     {
       FfMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi = CreateSrsCqiReport (sinr);
       m_enbPhySapUser->UlCqiReport (ulcqi);
+       // std::cout<< this<<"\t" <<  sinr << std::endl; //sjkang
     }
 }
 
@@ -838,7 +839,7 @@ LteEnbPhy::GenerateDataCqiReport (const SpectrumValue& sinr)
 {
   NS_LOG_FUNCTION (this << sinr);
   FfMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi = CreatePuschCqiReport (sinr);
-// std::cout<< this<<"\t" <<  sinr << std::endl; //sjkang
+//  std::cout<< this<<"\t" <<  sinr << std::endl; //sjkang
   m_enbPhySapUser->UlCqiReport (ulcqi);
 }
 
@@ -973,6 +974,8 @@ LteEnbPhy::CreateSrsCqiReport (const SpectrumValue& sinr)
   ulcqi.m_ulCqi.m_type = UlCqi_s::SRS;
   int i = 0;
   double srsSum = 0.0;
+  // if (13.760<Simulator::Now().GetSeconds() && Simulator::Now().GetSeconds() <14.242 ) //sjkang
+//	  std::cout << sinr<<std::endl;
   for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
     {
       double sinrdb = 10 * log10 ((*it));
@@ -998,7 +1001,9 @@ LteEnbPhy::CreateSrsCqiReport (const SpectrumValue& sinr)
 
 }
 
-
+//sjkang
+std::ofstream Outfile_Sinr_Menb("Sinr_Menb.txt");
+std::ofstream Outfile_Sinr_Senb("Sinr_Senb.txt"); 
 void
 LteEnbPhy::CreateSrsReport (uint16_t rnti, double srs)
 {
@@ -1014,6 +1019,12 @@ LteEnbPhy::CreateSrsReport (uint16_t rnti, double srs)
   if ((*it).second == m_srsSamplePeriod)
     {
       m_reportUeSinr (m_cellId, rnti, srs);
+          ////sjkang
+	if (m_cellId ==1 && srs < 5000) 
+	Outfile_Sinr_Menb <<Simulator::Now().GetSeconds() << "\t" << this << "\t" << m_cellId << "\t" << rnti << "\t" << srs << "\t" << std::endl;
+	else if (m_cellId==2 && srs < 5000)
+	Outfile_Sinr_Senb <<Simulator::Now().GetSeconds() << "\t" << this << "\t" << m_cellId << "\t" << rnti << "\t" << srs << "\t" << std::endl;	
+//      std:: cout <<this<< "   " <<m_cellId << "  " << rnti << "   "   <<Simulator::Now().GetSeconds()<< " " <<  srs << std::endl; //sjkang0606
       (*it).second = 0;
     }
 }

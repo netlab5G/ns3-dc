@@ -34,7 +34,7 @@
 #include <ns3/lte-enb-rrc.h> // woody
 
 namespace ns3 {
-
+int k_1=0; //sjkang0626
 NS_LOG_COMPONENT_DEFINE ("PfFfMacScheduler");
 
 static const int PfType0AllocationRbg[4] = {
@@ -226,6 +226,7 @@ PfFfMacScheduler::PfFfMacScheduler ()
   m_schedSapProvider = new PfSchedulerMemberSchedSapProvider (this);
   m_ffrSapProvider = 0;
   m_ffrSapUser = new MemberLteFfrSapUser<PfFfMacScheduler> (this);
+  //std::cout << this << std::endl; //sjkang
 }
 
 PfFfMacScheduler::~PfFfMacScheduler ()
@@ -312,13 +313,33 @@ PfFfMacScheduler::GetLteFfrSapUser ()
 {
   return m_ffrSapUser;
 }
-
+//sjkang
+void
+PfFfMacScheduler::Set_Bandwidth_Again(bool enabler, uint32_t RBsize){
+ //m_cschedCellConfig.m_ulBandwidth -= tbsize;
+ //m_cschedCellConfig.m_dlBandwidth -=tbsize;
+ m_RB =RBsize;
+ m_enabler_forChangingTBsize = enabler;
+}
+void
+PfFfMacScheduler::Change_Bandwidth(){
+	m_cschedCellConfig.m_ulBandwidth -= m_RB;
+	 m_cschedCellConfig.m_dlBandwidth -=m_RB;
+}
 void
 PfFfMacScheduler::DoCschedCellConfigReq (const struct FfMacCschedSapProvider::CschedCellConfigReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
   // Read the subset of parameters used
-  m_cschedCellConfig = params;
+
+
+ m_cschedCellConfig = params;
+ if (m_enabler_forChangingTBsize ){
+    		Change_Bandwidth() ; //sjkang
+    		m_enabler_forChangingTBsize = false;
+    		k_1=1;
+     }
+
   m_rachAllocationMap.resize (m_cschedCellConfig.m_ulBandwidth, 0);
   FfMacCschedSapUser::CschedUeConfigCnfParameters cnf;
   cnf.m_result = SUCCESS;
@@ -659,6 +680,11 @@ PfFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
 
   RefreshDlCqiMaps ();
 
+  if (m_enabler_forChangingTBsize ){
+     		Change_Bandwidth() ; //sjkang
+     		m_enabler_forChangingTBsize = false;
+     		k_1=1;
+      }
   int rbgSize = GetRbgSize (m_cschedCellConfig.m_dlBandwidth);
   int rbgNum = m_cschedCellConfig.m_dlBandwidth / rbgSize;
   std::map <uint16_t, std::vector <uint16_t> > allocationMap; // RBs map per RNTI
@@ -677,6 +703,7 @@ PfFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
     }
 
   FfMacSchedSapUser::SchedDlConfigIndParameters ret;
+
 
   //   update UL HARQ proc id
   std::map <uint16_t, uint8_t>::iterator itProcId;
@@ -1392,7 +1419,6 @@ PfFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
       GetPfsFlowPerf_t(itStats);
       (*itStats).second.lastTtiBytesTrasmitted = 0;
     }
-
   m_schedSapUser->SchedDlConfigInd (ret);
 
 
@@ -1475,6 +1501,13 @@ double
 PfFfMacScheduler::EstimateUlSinr (uint16_t rnti, uint16_t rb)
 {
   std::map <uint16_t, std::vector <double> >::iterator itCqi = m_ueCqi.find (rnti);
+
+  if (m_enabler_forChangingTBsize ){
+     		Change_Bandwidth() ; //sjkang
+     		m_enabler_forChangingTBsize = false;
+     		k_1=1;
+      }
+
   if (itCqi == m_ueCqi.end ())
     {
       // no cqi info about this UE
@@ -1508,6 +1541,14 @@ PfFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sched
   NS_LOG_FUNCTION (this << " UL - Frame no. " << (params.m_sfnSf >> 4) << " subframe no. " << (0xF & params.m_sfnSf) << " size " << params.m_ulInfoList.size ());
 
   RefreshUlCqiMaps ();
+
+  if (m_enabler_forChangingTBsize ){
+     		Change_Bandwidth() ; //sjkang
+     		m_enabler_forChangingTBsize = false;
+     		k_1=1;
+      }
+
+
   m_ffrSapProvider->ReportUlCqiInfo (m_ueCqi);
 
   // Generate RBs map
@@ -1973,6 +2014,11 @@ void
 PfFfMacScheduler::DoSchedUlCqiInfoReq (const struct FfMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
+  if (m_enabler_forChangingTBsize ){
+     		Change_Bandwidth() ; //sjkang
+     		m_enabler_forChangingTBsize = false;
+     		k_1=1;
+      }
   m_ffrSapProvider->ReportUlCqiInfo (params);
 
 // retrieve the allocation for this subframe

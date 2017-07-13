@@ -160,7 +160,7 @@ LteRrcSap::AssistInfo info1X[3];
 
 void
 EpcSgwPgwApplication::RecvAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
-  NS_LOG_FUNCTION (this);
+ // NS_LOG_FUNCTION (this);
   NS_ASSERT_MSG (m_isAssistInfoSink == true, "Not a assist info sink");
 
   int nodeNum;
@@ -560,8 +560,11 @@ EpcSgwPgwApplication::DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequest
       bearerContext.bearerLevelQos = bit->bearerLevelQos; 
       bearerContext.tft = bit->tft;
       bearerContext.dcType = bit->dcType; // woody
+      bearerContext.isMenb = req.isMenb;
       res.bearerContextsCreated.push_back (bearerContext);
     }
+ // std::cout << req.isMenb << std::endl;
+  //if (req.isMenb !=0)
   m_s11SapMme->CreateSessionResponse (res);
   
 }

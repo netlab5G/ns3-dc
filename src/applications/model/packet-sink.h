@@ -24,14 +24,14 @@
 #include "ns3/application.h"
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
-#include "ns3/traced-callback.h"
+#include "ns3/traced-callback.h" //sjkang
 #include "ns3/address.h"
-
+#include "packet-loss-counter.h"
 namespace ns3 {
 
-class Address;
-class Socket;
-class Packet;
+class Address;  //sjkang
+class Socket;  //sjkang
+class Packet;  //sjkang
 
 /**
  * \ingroup applications 
@@ -91,14 +91,20 @@ public:
    * \return list of pointers to accepted sockets
    */
   std::list<Ptr<Socket> > GetAcceptedSockets (void) const;
- 
+
+  uint32_t GetLost(void) const; //sjkang
+  uint64_t GetReceived(void)const; //sjkang
+  uint16_t GetPacketWindowSize() const; //sjkang
+  void SetPacketWindowSize(uint16_t); //sjkang
+  TracedCallback<uint64_t, uint32_t> m_loss;
 protected:
   virtual void DoDispose (void);
 private:
   // inherited from Application base class.
   virtual void StartApplication (void);    // Called at time specified by Start
   virtual void StopApplication (void);     // Called at time specified by Stop
-
+  PacketLossCounter m_lossCounter; //sjkang0713
+  uint64_t m_received;
   /**
    * \brief Handle a packet received by the application
    * \param socket the receiving socket
@@ -131,7 +137,7 @@ private:
   TypeId          m_tid;          //!< Protocol TypeId
 
   /// Traced Callback: received packets, source address.
-  TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;
+  TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace; //sjkang
 
 };
 

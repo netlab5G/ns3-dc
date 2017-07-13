@@ -31,7 +31,10 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/udp-socket-factory.h"
 #include "packet-sink.h"
+#include "ns3/uinteger.h"
+//#include "packet-loss-counter.h"
 
+#include "seq-ts-header.h"
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("PacketSink");
@@ -55,19 +58,29 @@ PacketSink::GetTypeId (void)
                    TypeIdValue (UdpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&PacketSink::m_tid),
                    MakeTypeIdChecker ())
+	.AddAttribute ("PacketWindowSize",
+				   "The size of the window used to compute the packet loss. This value should be a multiple of 8.",
+				    UintegerValue (32),
+				   MakeUintegerAccessor (&PacketSink::GetPacketWindowSize,
+				                          &PacketSink::SetPacketWindowSize),
+				    MakeUintegerChecker<uint16_t> (8,256))
     .AddTraceSource ("Rx",
                      "A packet has been received",
                      MakeTraceSourceAccessor (&PacketSink::m_rxTrace),
                      "ns3::Packet::AddressTracedCallback")
+	.AddTraceSource("Loss", "Udp packet loss rate", MakeTraceSourceAccessor(&PacketSink::m_loss)
+					     		, "ns3::Packet::UdpLossRate")
   ;
   return tid;
 }
 
 PacketSink::PacketSink ()
+:m_lossCounter(0)
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
   m_totalRx = 0;
+  m_received =0;
 }
 
 PacketSink::~PacketSink()
@@ -104,7 +117,23 @@ void PacketSink::DoDispose (void)
   // chain up
   Application::DoDispose ();
 }
-
+uint32_t
+PacketSink::GetLost() const{
+	NS_LOG_FUNCTION (this);
+	 return m_lossCounter.GetLost ();
+}
+uint64_t PacketSink::GetReceived() const{
+	NS_LOG_FUNCTION (this);
+	  return m_received;
+}
+uint16_t PacketSink::GetPacketWindowSize()const{
+	 NS_LOG_FUNCTION (this);
+	  return m_lossCounter.GetBitMapSize ();
+}
+void PacketSink::SetPacketWindowSize(uint16_t size){
+	 NS_LOG_FUNCTION (this);
+	 m_lossCounter.SetBitMapSize(size);
+}
 
 // Application Methods
 void PacketSink::StartApplication ()    // Called at time specified by Start
@@ -164,6 +193,9 @@ void PacketSink::HandleRead (Ptr<Socket> socket)
   Address from;
   while ((packet = socket->RecvFrom (from)))
     {
+	  SeqTsHeader seqTs;
+	   packet->RemoveHeader (seqTs);
+	   uint32_t currentSequenceNumber = seqTs.GetSeq ();
       if (packet->GetSize () == 0)
         { //EOF
           break;
@@ -192,7 +224,11 @@ void PacketSink::HandleRead (Ptr<Socket> socket)
                        << " port " << Inet6SocketAddress::ConvertFrom (from).GetPort ()
                        << " total Rx " << m_totalRx << " bytes");
         }
+      m_lossCounter.NotifyReceived(currentSequenceNumber);
+      m_received++;
       m_rxTrace (packet, from);
+      m_loss(m_received,GetLost());
+
     }
 }
 

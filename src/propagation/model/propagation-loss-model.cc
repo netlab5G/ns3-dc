@@ -487,8 +487,9 @@ LogDistancePropagationLossModel::GetTypeId (void)
 LogDistancePropagationLossModel::LogDistancePropagationLossModel ()
 {
 if (c_L ==0) {lossAddress = this; c_L=1;}
+//std::cout << this << std::endl;
 }
-
+//std::cout << this << std::endl;
 void
 LogDistancePropagationLossModel::SetPathLossExponent (double n)
 {
@@ -530,10 +531,10 @@ LogDistancePropagationLossModel::DoCalcRxPower (double txPowerDbm,
    *
    * rx = rx0(tx) - 10 * n * log (d/d0)
    */
-//if (lossAddress== this && Simulator::Now().GetSeconds() > 5.0 ) m_referenceLoss= 100;   
+// if (lossAddress== this && Simulator::Now().GetSeconds() > 5.0 && Simulator::Now().GetSeconds() <6.0 ) m_referenceLoss= 100;   
   double pathLossDb = 10 * m_exponent * std::log10 (distance / m_referenceDistance);
   double rxc = -m_referenceLoss - pathLossDb;
-//if (lossAddress== this && Simulator::Now().GetSeconds() > 5.0 && Simulator::Now().GetSeconds()<7) rxc-=30;  //sjkang
+//if ( Simulator::Now().GetSeconds() > 4.0 && Simulator::Now().GetSeconds()<5.0) rxc-=1000;  //sjkang
 NS_LOG_DEBUG ("distance="<<distance<<"m, reference-attenuation="<< -m_referenceLoss<<"dB, "<<
                 "attenuation coefficient="<<rxc<<"db");
   return txPowerDbm + rxc;

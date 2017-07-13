@@ -29,7 +29,7 @@
 #include "ns3/lte-rrc-sap.h" // woody
 #include "ns3/lte-enb-rrc.h" // woody
 #include "ns3/lte-ue-rrc.h" // woody
-
+#include "ns3/network-module.h"
 #include <vector>
 #include <map>
 
@@ -68,13 +68,17 @@ public:
   double averageBufferSize;
   Time SamplingTime;
   uint32_t ArrayInMovingWindow[11];
+  bool isSenb = false, isMenb = false;
 
   // woody
   virtual void SetAssistInfoPtr (LteRrcSap::AssistInfo* assistInfoPtr);
   virtual void IsEnbRlc (void);
   virtual void SetRrc (Ptr<LteEnbRrc> enbRrc, Ptr<LteUeRrc> ueRrc);
   virtual void CalculatePathThroughput (std::ofstream *streamPathThroughput);
-
+ // void SetImsi(uint16_t imsi); //sjkang0710
+ // void ReportRlcBufferSizeForUE();
+  void SetRlcAmIdentity(uint16_t imsi, uint16_t bearerId, bool isMenb, bool isMmenb); //sjkang
+  void ReportRlcBufferSizeForUE(); //sjkang
 private:
   // woody
   LteRrcSap::AssistInfo *m_assistInfoPtr;
@@ -83,7 +87,8 @@ private:
   Ptr<LteUeRrc> m_ueRrc;
   uint32_t sumPacketSize;
   uint32_t lastSumPacketSize;
-
+  uint16_t m_imsi; //sjkang
+  std::map<Ptr<LteRlcAm>,Ptr<OutputStreamWrapper>>FileStremFromRlcAddress; //sjkang
   /**
    * This method will schedule a timeout at WaitReplyTimeout interval
    * in the future, unless a timer is already running for the cache,

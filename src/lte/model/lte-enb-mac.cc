@@ -965,9 +965,17 @@ LteEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters
 // ////////////////////////////////////////////
 // SCHED SAP
 // ////////////////////////////////////////////
-
-
-
+/*
+void
+LteEnbMac::Set_RB_Size(uint32_t RB_size, bool enabler){  //sjkang
+	m_RB_size = RB_size;
+    m_enable_Changing_RBsize = enabler;
+}
+uint32_t
+LteEnbMac::Get_RB_Size(){ //sjkang
+	return m_RB_size;
+}
+*/
 void
 LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind)
 {
@@ -996,7 +1004,7 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
         {
           for (uint16_t k = 0; k < ind.m_buildDataList.at (i).m_rlcPduList.at (j).size (); k++)
             {
-              if (ind.m_buildDataList.at (i).m_dci.m_ndi.at (k) == 1)
+              if (ind.m_buildDataList.at (i).m_dci.m_ndi.at (k) == 1 ) //sjkang
                 {
                   // New Data -> retrieve it from RLC
                   uint16_t rnti = ind.m_buildDataList.at (i).m_rnti;
@@ -1006,7 +1014,9 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
                   std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (lcid);
                   NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << lcid);
                   NS_LOG_DEBUG (this << " rnti= " << rnti << " lcid= " << (uint32_t) lcid << " layer= " << k);
-                  (*lcidIt).second->NotifyTxOpportunity (ind.m_buildDataList.at (i).m_rlcPduList.at (j).at (k).m_size, k, ind.m_buildDataList.at (i).m_dci.m_harqProcess);
+
+
+                	  	  (*lcidIt).second->NotifyTxOpportunity (ind.m_buildDataList.at (i).m_rlcPduList.at (j).at (k).m_size, k, ind.m_buildDataList.at (i).m_dci.m_harqProcess);
                 }
               else
                 {

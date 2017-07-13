@@ -95,38 +95,54 @@ LteHelper::DoInitialize (void)
 
   m_downlinkPathlossModel = m_dlPathlossModelFactory.Create ();
   Ptr<SpectrumPropagationLossModel> dlSplm = m_downlinkPathlossModel->GetObject<SpectrumPropagationLossModel> ();
+  m_downlinkPathlossModel_1 = m_dlPathlossModelFactoryAtSenb.Create ();
+    Ptr<SpectrumPropagationLossModel> dlSplm_1 = m_downlinkPathlossModel->GetObject<SpectrumPropagationLossModel> ();
+
   if (dlSplm != 0)
     {
       NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel in DL");
       m_downlinkChannel->AddSpectrumPropagationLossModel (dlSplm);
-      m_downlinkChannel_1->AddSpectrumPropagationLossModel (dlSplm);
+      m_downlinkChannel_1->AddSpectrumPropagationLossModel (dlSplm_1);
     }
   else
     {
       NS_LOG_LOGIC (this << " using a PropagationLossModel in DL");
       Ptr<PropagationLossModel> dlPlm = m_downlinkPathlossModel->GetObject<PropagationLossModel> ();
-Ptr<PropagationLossModel> dlPlm_1 = m_downlinkPathlossModel->GetObject<PropagationLossModel> ();
+      Ptr<PropagationLossModel> dlPlm_1 = m_downlinkPathlossModel_1->GetObject<PropagationLossModel> ();
       NS_ASSERT_MSG (dlPlm != 0, " " << m_downlinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
+      //sjkang0705
       m_downlinkChannel->AddPropagationLossModel (dlPlm);
-       m_downlinkChannel_1->AddPropagationLossModel (dlPlm_1);
+       m_downlinkChannel_1->AddPropagationLossModel (dlPlm_1);  //sjkang0705
+       m_dlChannel_1 = m_downlinkChannel;
+       m_dlChannel_2 = m_downlinkChannel_1;  //sjkang0705
+      m_dlPlm_1 = dlPlm;   //sjkang0705
+       m_dlPlm_2 = dlPlm_1;  //sjkang0705
+       //std::cout << dlPlm->GetObject<LogDistancePropagationLossModel>()<<std::endl;
+       //std::cout << dlPlm_1->GetObject<LogDistancePropagationLossModel>()<<std::endl;
+
     }
 
   m_uplinkPathlossModel = m_ulPathlossModelFactory.Create ();
   Ptr<SpectrumPropagationLossModel> ulSplm = m_uplinkPathlossModel->GetObject<SpectrumPropagationLossModel> ();
+  m_uplinkPathlossModel_1 = m_ulPathlossModelFactoryAtSenb.Create ();
+  Ptr<SpectrumPropagationLossModel> ulSplm_1 = m_uplinkPathlossModel_1->GetObject<SpectrumPropagationLossModel> ();
+
   if (ulSplm != 0)
     {
       NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel in UL");
       m_uplinkChannel->AddSpectrumPropagationLossModel (ulSplm);
-           m_uplinkChannel_1->AddSpectrumPropagationLossModel (ulSplm);
+           m_uplinkChannel_1->AddSpectrumPropagationLossModel (ulSplm_1);
     }
   else
     {
       NS_LOG_LOGIC (this << " using a PropagationLossModel in UL");
       Ptr<PropagationLossModel> ulPlm = m_uplinkPathlossModel->GetObject<PropagationLossModel> ();
-  Ptr<PropagationLossModel> ulPlm_1 = m_uplinkPathlossModel->GetObject<PropagationLossModel> ();
+  Ptr<PropagationLossModel> ulPlm_1 = m_uplinkPathlossModel_1->GetObject<PropagationLossModel> ();
       NS_ASSERT_MSG (ulPlm != 0, " " << m_uplinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
       m_uplinkChannel->AddPropagationLossModel (ulPlm);
           m_uplinkChannel_1->AddPropagationLossModel (ulPlm_1);
+          m_ulPlm_1 = ulPlm;
+          m_ulPlm_2 = ulPlm_1;
     }
   if (!m_fadingModelType.empty ())
     {
@@ -181,13 +197,21 @@ TypeId LteHelper::GetTypeId (void)
                    MakeStringAccessor (&LteHelper::SetHandoverAlgorithmType,
                                        &LteHelper::GetHandoverAlgorithmType),
                    MakeStringChecker ())
-    .AddAttribute ("PathlossModel",
+    .AddAttribute ("PathlossModelAtMenb",
                    "The type of pathloss model to be used. "
                    "The allowed values for this attributes are the type names "
                    "of any class inheriting from ns3::PropagationLossModel.",
                    StringValue ("ns3::FriisPropagationLossModel"),
                    MakeStringAccessor (&LteHelper::SetPathlossModelType),
                    MakeStringChecker ())
+     .AddAttribute ("PathlossModelAtSenb",
+				                      "The type of pathloss model to be used. "
+				                      "The allowed values for this attributes are the type names "
+				                      "of any class inheriting from ns3::PropagationLossModel.",
+				                      StringValue ("ns3::FriisPropagationLossModel"),
+				                      MakeStringAccessor (&LteHelper::SetPathlossModelTypeAtSenb),
+				                      MakeStringChecker ())
+
     .AddAttribute ("FadingModel",
                    "The type of fading model to be used."
                    "The allowed values for this attributes are the type names "
@@ -311,6 +335,16 @@ LteHelper::SetPathlossModelType (std::string type)
 }
 
 void 
+LteHelper::SetPathlossModelTypeAtSenb (std::string type)
+{
+  NS_LOG_FUNCTION (this << type);
+  m_dlPathlossModelFactoryAtSenb = ObjectFactory ();
+  m_dlPathlossModelFactoryAtSenb.SetTypeId (type);
+  m_ulPathlossModelFactoryAtSenb = ObjectFactory ();
+  m_ulPathlossModelFactoryAtSenb.SetTypeId (type);
+}
+
+void
 LteHelper::SetPathlossModelAttribute (std::string n, const AttributeValue &v)
 {
   NS_LOG_FUNCTION (this << n);
@@ -479,7 +513,7 @@ LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8
   Ptr<LteUeRrc> ueRrcDc = ueDev->GetRrcDc();
   Ptr<PfFfMacScheduler> enbPfFfMacScheduler = enbDev->GetFfMacScheduler()->GetObject<PfFfMacScheduler>();
   Ptr<PfFfMacScheduler> senbPfFfMacScheduler = senbDev->GetFfMacScheduler()->GetObject<PfFfMacScheduler>();
-  if(!enbPfFfMacScheduler || !senbPfFfMacScheduler) NS_FATAL_ERROR ("Only PfFfMacScheduler is dealt");
+  if(!enbPfFfMacScheduler || !senbPfFfMacScheduler) NS_FATAL_ERROR ("Only PfFfMacScheduler is dealt"); 
 
   Ptr<Node> pgwNode = m_epcHelper->GetPgwNode ();
   Ptr<EpcSgwPgwApplication> pgwApp = pgwNode->GetApplication (0)->GetObject<EpcSgwPgwApplication> ();
@@ -488,10 +522,10 @@ LteHelper::ConnectAssistInfo (Ptr<Node> enb, Ptr<Node> senb, Ptr<Node> ue, uint8
   senbRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
   ueRrc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
   ueRrcDc->SetAssistInfoSink (enbRrc, pgwApp, dcType);
-//  enbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
-//  senbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
-  enbPfFfMacScheduler->SetRrc (enbRrc);
-  senbPfFfMacScheduler->SetRrc (senbRrc);
+  // enbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  //senbPfFfMacScheduler->SetAssistInfoSink (enbRrc, pgwApp, dcType);
+  enbPfFfMacScheduler->SetRrc (enbRrc);   
+   senbPfFfMacScheduler->SetRrc (senbRrc);
 
 //  enbRrc->SetPfFfMacScheduler (enbPfFfMacScheduler);
 //  senbRrc->SetPfFfMacScheduler (senbPfFfMacScheduler);
@@ -555,7 +589,7 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
   Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
   Ptr<LteHandoverAlgorithm> handoverAlgorithm = m_handoverAlgorithmFactory.Create<LteHandoverAlgorithm> ();
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
-
+  rrc->isMenb=true; //sjkang0705
   rrc->SetMenb(); // woody
 
   if (m_useIdealRrc)
@@ -612,8 +646,10 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
   rrc->SetLteFfrRrcSapProvider (ffrAlgorithm->GetLteFfrRrcSapProvider ());
   ffrAlgorithm->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser ());
   //FFR SAP END
-
+ //phy->SetAttribute("MacToChannelDelay", UintegerValue(3)); //sjkang0606
+ // phy->SetAttribute("TxPower",DoubleValue(40.0));
   Ptr<LteEnbNetDevice> dev = m_enbNetDeviceFactory.Create<LteEnbNetDevice> ();
+
   dev->SetNode (n);
   dev->SetAttribute ("CellId", UintegerValue (cellId)); 
   dev->SetAttribute ("LteEnbPhy", PointerValue (phy));
@@ -677,7 +713,8 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
       x2->SetEpcX2SapUser (rrc->GetEpcX2SapUser ());
       rrc->SetEpcX2SapProvider (x2->GetEpcX2SapProvider ());
     }
-
+ // dev->GetMac()->Set_RB_Size(10,true); //sjkang
+ // std ::cout<< dev << std::endl;
   return dev;
 }
 
@@ -713,10 +750,10 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   pInterf->AddCallback (MakeCallback (&LteEnbPhy::ReportInterference, phy));
   ulPhy->AddInterferenceDataChunkProcessor (pInterf); // for interference power tracing
 
-// dlPhy->SetChannel (m_downlinkChannel_1);
-// ulPhy->SetChannel (m_uplinkChannel_1);
- dlPhy->SetChannel (m_downlinkChannel);
- ulPhy->SetChannel (m_uplinkChannel);
+ // dlPhy->SetChannel (m_downlinkChannel_1); //sjkang0606
+  //ulPhy->SetChannel (m_uplinkChannel_1); //sjkang0606
+dlPhy->SetChannel (m_downlinkChannel);
+ulPhy->SetChannel (m_uplinkChannel);
 
   Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
   NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling LteHelper::InstallUeDevice ()");
@@ -733,7 +770,7 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
   Ptr<LteHandoverAlgorithm> handoverAlgorithm = m_handoverAlgorithmFactory.Create<LteHandoverAlgorithm> ();
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
-
+  rrc->isSenb =true;  //sjkang0705
   if (m_useIdealRrc)
     {
       Ptr<LteEnbRrcProtocolIdeal> rrcProtocol = CreateObject<LteEnbRrcProtocolIdeal> ();
@@ -790,7 +827,10 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   rrc->SetLteFfrRrcSapProvider (ffrAlgorithm->GetLteFfrRrcSapProvider ());
   ffrAlgorithm->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser ());
   //FFR SAP END
-
+  phy->SetAttribute("UeSinrSamplePeriod", UintegerValue(2)); //sjkang0606
+  phy->SetAttribute("InterferenceSamplePeriod", UintegerValue(2)); //sjkang0606
+// phy->SetAttribute("TxPower",DoubleValue(40.0));  //sjkang0606
+//  phy->SetAttribute("MacToChannelDelay", UintegerValue(3)); //sjkang0606
   Ptr<LteEnbNetDevice> dev = m_enbNetDeviceFactory.Create<LteEnbNetDevice> ();
   dev->SetNode (n);
   dev->SetAttribute ("CellId", UintegerValue (cellId)); 
@@ -800,7 +840,8 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
   dev->SetAttribute ("LteEnbRrc", PointerValue (rrc)); 
   dev->SetAttribute ("LteHandoverAlgorithm", PointerValue (handoverAlgorithm));
   dev->SetAttribute ("LteFfrAlgorithm", PointerValue (ffrAlgorithm));
-  dev->SetAttribute ("DlEarfcn", UintegerValue (1000)); //DlEarfcn for SeNB, sychoi
+
+  dev->SetAttribute ("DlEarfcn", UintegerValue (1000));//DlEarfcn for SeNB, sychoi
   dev->SetAttribute("UlEarfcn", UintegerValue( 23731)); //sjkang 
   if (m_isAnrEnabled)
     {
@@ -839,8 +880,8 @@ LteHelper::InstallSingleSenbDevice (Ptr<Node> n) // woody
 
   dev->Initialize ();
 
- m_uplinkChannel->AddRx (ulPhy);
-  //m_uplinkChannel_1->AddRx(ulPhy);
+   m_uplinkChannel->AddRx (ulPhy);
+ // m_uplinkChannel_1->AddRx(ulPhy); //sjkang0606
   if (m_epcHelper != 0)
     {
       NS_LOG_INFO ("adding this eNB to the EPC");
@@ -1067,9 +1108,10 @@ LteHelper::InstallSingleDcUeDevice (Ptr<Node> n) // woody
   ulPhy->SetChannel (m_uplinkChannel);
   dlPhyDc->SetChannel (m_downlinkChannel); // woody, does DC share DL, UL channel with main path?
   ulPhyDc->SetChannel (m_uplinkChannel);
-//  dlPhyDc->SetChannel (m_downlinkChannel_1); // woody, does DC share DL, UL channel with main path?
-//  ulPhyDc->SetChannel (m_uplinkChannel_1);
-
+ //dlPhyDc->SetChannel (m_downlinkChannel_1); // woody, does DC share DL, UL channel with main path?
+ // ulPhyDc->SetChannel (m_uplinkChannel_1);
+ //y->SetAttribute("TxPower",DoubleValue(40.0));
+//hy->SetAttribute("TxPower",DoubleValue(40.0));
   Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
   NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling LteHelper::InstallUeDevice ()");
   dlPhy->SetMobility (mm);
@@ -1151,10 +1193,12 @@ LteHelper::InstallSingleDcUeDevice (Ptr<Node> n) // woody
   rrc->SetRrcDc (rrcDc); // woody3C
   rrcDc->SetRrcDc (rrc);
   rrc->SetDc();
-
+// phyDc->SetAttribute("UeMeasurementsFilterPeriod",TimeValue(MilliSeconds(250)));//sjkang0606
+ //phy->SetAttribute("TxPower",DoubleValue(20.0)); //sjkang0606
+// phyDc->SetAttribute("TxPower",DoubleValue(20.0));  //sjkang0606
   NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
   uint64_t imsi = ++m_imsiCounter;
-
+  phyDc->SetAttribute("RsrpSinrSamplePeriod", UintegerValue(2)); //sjkang0606
   Ptr<LteUeNetDevice> dev = m_ueNetDeviceFactory.Create<LteUeNetDevice> ();
   dev->SetNode (n);
   dev->SetAttribute ("Imsi", UintegerValue (imsi));
@@ -1279,7 +1323,6 @@ LteHelper::Attach (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
       ueDevice->GetObject<LteUeNetDevice> ()->SetTargetEnb (enbDevice->GetObject<LteEnbNetDevice> ());
     }
 }
-
 void
 LteHelper::AttachDc (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice, Ptr<EpcTft> tftDc, uint8_t dcType) // woody, woody3C
 {
@@ -1767,5 +1810,21 @@ LteHelper::GetPdcpStats (void)
 {
   return m_pdcpStats;
 }
-
+////sjkang0705
+Ptr<SpectrumChannel>
+LteHelper::GetDlChannel_1(){
+	return m_downlinkChannel;
+}
+Ptr<SpectrumChannel>
+LteHelper::GetDlChannel_2(){
+	return m_downlinkChannel_1;
+}
+Ptr<SpectrumChannel>
+LteHelper::GetUlChannel_1(){
+	return m_uplinkChannel;
+}
+Ptr<SpectrumChannel>
+LteHelper::GetUlChannel_2(){
+	return m_uplinkChannel_1;
+}
 } // namespace ns3

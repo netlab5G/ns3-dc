@@ -210,7 +210,9 @@ private:
 
   /// The unique UE identifier.
   uint64_t m_imsi;
-
+  uint16_t m_cellId_DC;
+  uint16_t m_DlEarfcn_DC;
+  uint8_t m_ueCount=0;
   /// Closed Subscriber Group identity.
   uint32_t m_csgId;
 

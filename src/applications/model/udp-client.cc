@@ -162,6 +162,7 @@ UdpClient::Send (void)
   NS_ASSERT (m_sendEvent.IsExpired ());
   SeqTsHeader seqTs;
   seqTs.SetSeq (m_sent);
+ // std::cout << "Udp Client" << m_sent << std::endl;
   Ptr<Packet> p = Create<Packet> (m_size-(8+4)); // 8+4 : the size of the seqTs header
   p->AddHeader (seqTs);
 

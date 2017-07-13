@@ -99,6 +99,12 @@ public:
   LteHelper (void);
   virtual ~LteHelper (void);
 
+  ///sjkang0705
+  Ptr<SpectrumChannel> GetDlChannel_1();
+  Ptr<SpectrumChannel> GetDlChannel_2();
+  Ptr<SpectrumChannel> GetUlChannel_1();
+  Ptr<SpectrumChannel> GetUlChannel_2();
+
   /**
    *  Register this type.
    *  \return The object TypeId.
@@ -129,6 +135,7 @@ public:
    *             "ns3::FriisPropagationLossModel"
    */
   void SetPathlossModelType (std::string type);
+  void SetPathlossModelTypeAtSenb (std::string type);
 
   /**
    * Set an attribute for the path loss models to be created.
@@ -596,6 +603,10 @@ public:
    * \return the number of stream indices (possibly zero) that have been assigned
   */
   int64_t AssignStreams (NetDeviceContainer c, int64_t stream);
+Ptr<PropagationLossModel> m_dlPlm_1, m_dlPlm_2, m_ulPlm_1, m_ulPlm_2;//sjkang
+Ptr<SpectrumChannel> m_dlChannel_1, m_dlChannel_2, m_ulChannel_1, m_ulChannel_2; //sjkang
+
+
 
 protected:
   // inherited from Object
@@ -648,18 +659,23 @@ private:
 
 
   /// The downlink LTE channel used in the simulation.
-  Ptr<SpectrumChannel> m_downlinkChannel;
-  /// The uplink LTE channel used in the simulation.
-  Ptr<SpectrumChannel> m_uplinkChannel;
- 
- Ptr<SpectrumChannel> m_downlinkChannel_1;
-  /// The uplink LTE channel used in the simulation.
-  Ptr<SpectrumChannel> m_uplinkChannel_1;
+    Ptr<SpectrumChannel> m_downlinkChannel;
+    /// The uplink LTE channel used in the simulation.
+    Ptr<SpectrumChannel> m_uplinkChannel;
+
+   Ptr<SpectrumChannel> m_downlinkChannel_1;
+    /// The uplink LTE channel used in the simulation.
+    Ptr<SpectrumChannel> m_uplinkChannel_1;
 
   /// The path loss model used in the downlink channel.
   Ptr<Object> m_downlinkPathlossModel;
   /// The path loss model used in the uplink channel.
   Ptr<Object> m_uplinkPathlossModel;
+//////////////////////////////////////////////sjkang0705
+  /// The path loss model used in the downlink channel.
+   Ptr<Object> m_downlinkPathlossModel_1;
+   /// The path loss model used in the uplink channel.
+   Ptr<Object> m_uplinkPathlossModel_1;
 
   /// Factory of MAC scheduler object.
   ObjectFactory m_schedulerFactory;
@@ -678,7 +694,12 @@ private:
   /// Factory of path loss model object for the downlink channel.
   ObjectFactory m_dlPathlossModelFactory;
   /// Factory of path loss model object for the uplink channel.
+  //sjkang0705
   ObjectFactory m_ulPathlossModelFactory;
+  ObjectFactory m_dlPathlossModelFactoryAtSenb;
+  /// Factory of path loss model object for the uplink channel.
+  ObjectFactory m_ulPathlossModelFactoryAtSenb;
+
   /// Factory of both the downlink and uplink LTE channels.
   ObjectFactory m_channelFactory;
 

@@ -164,6 +164,7 @@ private:
    * 
    */  
   std::map<uint64_t, Ptr<UeInfo> > m_ueInfoMap;
+  std::map<uint64_t,EpcS11SapSgw::CreateSessionRequestMessage> WaitingForCellId; //sjkang0713
 
   /**
    * \brief This Function erases all contexts of bearer from MME side

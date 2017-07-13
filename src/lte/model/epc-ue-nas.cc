@@ -188,7 +188,8 @@ EpcUeNas::ConnectDc (uint16_t cellId, uint16_t dlEarfcn) // woody
 
   // force the UE RRC to be camped on a specific eNB
   m_asSapProviderDc->ForceCampedOnEnb (cellId, dlEarfcn);
-
+    m_cellId_DC = cellId;
+    m_DlEarfcn_DC = dlEarfcn;
   // tell RRC to go into connected mode
   m_asSapProviderDc->Connect ();
 }
@@ -252,20 +253,24 @@ EpcUeNas::Send (Ptr<Packet> packet)
       break;
     }
 }
-
+//int ue_count_ =0;
 void 
 EpcUeNas::DoNotifyConnectionSuccessful ()
 {
   NS_LOG_FUNCTION (this);
 
   SwitchToState (ACTIVE); // will eventually activate dedicated bearers
-}
+  //if (m_uecount_ ==0){
+
+  }
+
 
 void
 EpcUeNas::DoNotifyConnectionFailed ()
 {
   NS_LOG_FUNCTION (this);
 
+ //std::cout << this << std::endl;
   // immediately retry the connection
   Simulator::ScheduleNow (&LteAsSapProvider::Connect, m_asSapProvider);
 }

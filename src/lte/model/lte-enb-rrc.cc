@@ -423,6 +423,14 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
   if (rlcTypeId == LteRlcAm::GetTypeId ())
     {
       drbInfo->m_rlcConfig.choice =  LteRrcSap::RlcConfig::AM;
+      m_rlcAM = drbInfo->m_rlc->GetObject<LteRlcAm>(); //sjkang0705
+             if (m_rrc->isMenb)
+            	 m_rlcAM->isMenb =true;
+             else if (m_rrc->isSenb)
+            	 m_rlcAM->isSenb =true;
+
+    //  std::cout<< drbInfo->m_rlc << std::endl;
+
     }
   else
     {
@@ -1556,7 +1564,10 @@ UeManager::SwitchToState (State newState)
     }
 }
 
-
+std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >
+UeManager::GetDrb(){
+        return m_drbMap;
+}
 
 ///////////////////////////////////////////
 // eNB RRC methods
@@ -1992,8 +2003,15 @@ LteEnbRrc::AddUeMeasReportConfig (LteRrcSap::ReportConfigEutra config)
 
   return nextId;
 }
-
-void
+void  //sjkang0626
+LteEnbRrc::SetBandwidth(){
+	m_dlBandwidth -=25;
+	m_ulBandwidth -=25;
+	//m_cphySapProvider->SetBandwidth (m_ulBandwidth, m_dlBandwidth);
+	// m_ffrRrcSapProvider->SetBandwidth(m_ulBandwidth, m_dlBandwidth);
+	 std::cout << m_dlBandwidth <<"  " << m_ulBandwidth << std ::endl;
+}
+void   //sjkang0626
 LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
                           uint16_t ulEarfcn, uint16_t dlEarfcn, uint16_t cellId)
 {
@@ -2001,10 +2019,12 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
                         << ulEarfcn << dlEarfcn << cellId);
   NS_ASSERT (!m_configured);
   m_cmacSapProvider->ConfigureMac (ulBandwidth, dlBandwidth);
-  m_cphySapProvider->SetBandwidth (ulBandwidth, dlBandwidth);
+
   m_cphySapProvider->SetEarfcn (ulEarfcn, dlEarfcn);
   m_dlEarfcn = dlEarfcn;
   m_ulEarfcn = ulEarfcn;
+  m_cphySapProvider->SetBandwidth (ulBandwidth, dlBandwidth);
+
   m_dlBandwidth = dlBandwidth;
   m_ulBandwidth = ulBandwidth;
   m_cellId = cellId;
@@ -2083,6 +2103,13 @@ LteEnbRrc::SendData (Ptr<Packet> packet)
   Ptr<UeManager> ueManager = GetUeManager (tag.GetRnti ());
   ueManager->SendData (tag.GetBid (), packet);
 
+  if (c_c ==0 && isMenb ){ //sjkang0713
+    Traces(); c_c=1;
+   }
+    if (isSenb && c__c==0){
+          Traces();
+          c__c=1;
+    }
   return true;
 }
 
@@ -2822,7 +2849,7 @@ LteEnbRrc::IsAssistInfoSink (){ // woody
 
 void
 LteEnbRrc::SendAssistInfo (LteRrcSap::AssistInfo assistInfo){ // woody
-  NS_LOG_FUNCTION (this);
+//  NS_LOG_FUNCTION (this);
   static const Time delay = MilliSeconds (0);
   NS_ASSERT_MSG (m_assistInfoSinkEnb != 0 || m_assistInfoSinkPgw != 0, "Cannot find assist info sink");
 
@@ -2876,10 +2903,28 @@ LteEnbRrc::SetAssistInfoPtr (LteRrcSap::AssistInfo *assistInfo) // woody
 LteRrcSap::AssistInfo*
 LteEnbRrc::GetAssistInfoPtr () // woody
 {
-  NS_LOG_FUNCTION (this);
+  //NS_LOG_FUNCTION (this);
   return m_assistInfoPtr;
 }
 
+void
+LteEnbRrc::Traces(){  //sjkang0713
+         std::map<uint16_t, Ptr<UeManager> >::iterator it = m_ueMap.begin();
+         for (it=m_ueMap.begin(); it!=m_ueMap.end();it++){
+                 std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > DrbInfo; //sjkang0712
+                DrbInfo = it->second->GetDrb();
+                std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > ::iterator itt;
+       for (itt=DrbInfo.begin(); itt!= DrbInfo.end(); itt++){
 
+       if(itt->second->m_rlcConfig.choice == LteRrcSap::RlcConfig::AM && DrbInfo.size()!=0 )
+       {
+      uint16_t drbId=itt->second->m_drbIdentity;
+    itt->second->m_rlc->GetObject<LteRlcAm>()->SetRlcAmIdentity
+        (it->second->GetImsi(),drbId, isMenb, isSenb);
+
+         }
+         }
+}
+}
 } // namespace ns3
 

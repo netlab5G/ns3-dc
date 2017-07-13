@@ -85,6 +85,7 @@ public:
     EpsBearer bearerLevelQos; 
     Ptr<EpcTft> tft;
     uint8_t dcType; // woody
+    uint8_t isMenb=0;
   };
 
 
@@ -177,6 +178,7 @@ public:
     Uli uli; 
     std::list<BearerContextToBeCreated> bearerContextsToBeCreated;
     uint8_t isSenb; // woody1X
+    uint8_t isMenb=0; //sjkang
   };
 
   /** 

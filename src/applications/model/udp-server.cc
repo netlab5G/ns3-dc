@@ -59,6 +59,12 @@ UdpServer::GetTypeId (void)
                    MakeUintegerAccessor (&UdpServer::GetPacketWindowSize,
                                          &UdpServer::SetPacketWindowSize),
                    MakeUintegerChecker<uint16_t> (8,256))
+	.AddTraceSource ("Rx",
+				           "A packet has been received",
+				                      MakeTraceSourceAccessor (&UdpServer::m_rxTrace),
+				                      "ns3::Packet::AddressTracedCallbackForUdp")  //sjkang
+    .AddTraceSource("Loss", "Udp packet loss rate", MakeTraceSourceAccessor(&UdpServer::m_loss)
+    		, "ns3::Packet::UdpLossRate")
   ;
   return tid;
 }
@@ -68,6 +74,7 @@ UdpServer::UdpServer ()
 {
   NS_LOG_FUNCTION (this);
   m_received=0;
+ //std:: cout << "hi " <<std::endl;
 }
 
 UdpServer::~UdpServer ()
@@ -186,6 +193,10 @@ UdpServer::HandleRead (Ptr<Socket> socket)
 
           m_lossCounter.NotifyReceived (currentSequenceNumber);
           m_received++;
+
+          m_rxTrace(packet, GetLost());  //sjkang
+          m_loss(GetLost());
+
         }
     }
 }

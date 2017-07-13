@@ -672,6 +672,10 @@ public:
   typedef void (* AddressTracedCallback)
     (Ptr<const Packet> packet, const Address &address);
   
+  typedef void (* AddressTracedCallbackForUdp)
+      (Ptr<const Packet> packet, uint32_t loss);  //sjkang0713
+  typedef void(* UdpLossRate)
+ 		  ( uint32_t losss); //sjkang
   /**
    * TracedCallback signature for packet and Mac48Address.
    *
